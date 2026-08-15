@@ -93,9 +93,41 @@ full shadcn set.
 
 ## Deployment
 
-Built output is static. `dist/` is served by nginx on the VPS, with an SPA
-fallback so client-side routes resolve on hard refresh.
+Live at **https://afterglowcredit.online** on a Hostinger VPS (Ubuntu 24.04),
+served as static files by nginx with an SPA fallback so client-side routes
+resolve on hard refresh.
+
+To deploy the current checkout:
 
 ```bash
-npm ci && npm run build
+./deploy/deploy.sh
 ```
+
+That builds into `dist/`, copies it to a timestamped directory under
+`/var/www/afterglow/releases/`, then atomically flips the
+`/var/www/afterglow/current` symlink and reloads nginx. The last five releases
+are kept, so rolling back is just repointing the symlink:
+
+```bash
+sudo ln -sfn /var/www/afterglow/releases/<timestamp> /var/www/afterglow/current.new
+sudo mv -Tf /var/www/afterglow/current.new /var/www/afterglow/current
+sudo systemctl reload nginx
+```
+
+### Server config
+
+| Thing | Location |
+| ----- | -------- |
+| Site config | `/etc/nginx/sites-available/afterglow` |
+| Shared headers | `/etc/nginx/snippets/afterglow-headers.conf` |
+| Web root | `/var/www/afterglow/current` → `releases/<timestamp>` |
+| Certificate | `/etc/letsencrypt/live/afterglowcredit.online/` |
+
+`deploy/nginx.conf` is the pre-TLS starting point; certbot rewrote the installed
+copy to add the 443 listeners and the HTTP→HTTPS redirect. Certificates renew
+automatically via `certbot.timer`.
+
+Headers are kept in a snippet because nginx's `add_header` does not merge across
+levels — a single `add_header` in a `location` block discards everything
+inherited from the server block. See the comment in
+`deploy/security-headers.conf`.
