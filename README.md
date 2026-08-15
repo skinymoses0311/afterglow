@@ -14,6 +14,7 @@ at `afterglowcredit.com`, and deployed to `afterglowcredit.online`.
 | Styling    | Tailwind CSS 3, shadcn/ui-style primitives |
 | Routing    | React Router 6                            |
 | Validation | Zod                                       |
+| Backend    | Convex                                    |
 | Toasts     | Sonner                                    |
 | Icons      | lucide-react                               |
 
@@ -43,23 +44,55 @@ npm run lint     # typecheck only
 | `/unsubscribe` | Unsubscribe   | Reads `?token=` from the query string                     |
 | `*`            | NotFound      | 404                                                        |
 
-## ⚠️ Backend status
+## Backend
 
-The original site wrote form submissions directly to Supabase. That has been
-removed — **Convex is the intended replacement and is not wired up yet.**
+Convex, replacing the Supabase setup the original site used. Everything the
+site writes goes through `src/lib/submissions.ts`, so no page talks to the
+backend directly.
 
-Everything funnels through `src/lib/submissions.ts`, which currently has
-`BACKEND = "none"`. In that mode forms validate and show their success state,
-but **submissions are logged to the console and then discarded**. Each function
-returns `persisted: false` so callers can tell.
+```
+convex/
+  schema.ts     waitlistSignups + merchantApplications, with their indexes
+  waitlist.ts   signUp      — upserts by email, reports duplicates
+  merchants.ts  apply       — inserts an application
+  email.ts      lookupUnsubscribeToken / unsubscribe
+```
 
-**Do not drive real traffic at the waitlist until Convex is connected**, or
-signups will be silently lost. To connect it: add the Convex client, flip
-`BACKEND` to `"convex"`, and fill in the four `TODO(convex)` bodies in that file.
-Nothing else in the app needs to change.
+Working on the backend:
 
-`/book` is likewise front-end only — the booking modal is a design mock, takes no
-payment, and the partner list (`TREATMENTS` in `src/pages/Book.tsx`) is empty,
+```bash
+npx convex dev          # watch mode, pushes functions as you edit
+npx convex dev --once   # push once and exit
+npx convex dashboard    # open the data browser
+```
+
+`npx convex dev` writes `CONVEX_DEPLOYMENT` and `VITE_CONVEX_URL` into
+`.env.local`, which is gitignored. `.env.production` is tracked and holds the
+URL the deployed build talks to — that value is public, since Vite inlines it
+into the bundle. The **deploy key is a secret** and lives outside the repo, at
+`~/.convex-deploy-key` on the VPS.
+
+### ⚠️ This points at a development deployment
+
+`.env.production` currently targets `veracious-viper-240`, which is a Convex
+*dev* deployment. Dev deployments are per-developer and can be reset, so before
+real launch traffic: create a production deployment, generate a production
+deploy key, update `.env.production`, and redeploy.
+
+### Waitlist behaviour worth knowing
+
+Re-submitting an address that is already on the list updates that row rather
+than creating a second one — latest treatment selection wins, and it clears any
+previous opt-out. The user sees "You are already on the list ✨".
+
+Unsubscribe links work off an opaque per-signup token (`?token=…`), never the
+address itself. Nothing currently *sends* those emails; the page and the
+backend for them exist and are tested.
+
+### /book is still front-end only
+
+The booking modal is a design mock — it takes no payment and writes nothing.
+`TREATMENTS` in `src/pages/Book.tsx` is empty, so the page shows "COMING SOON",
 matching the live site.
 
 ## Design tokens

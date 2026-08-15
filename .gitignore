@@ -4,9 +4,13 @@ dist-ssr
 *.local
 *.tsbuildinfo
 
+# Convex writes CONVEX_DEPLOYMENT (developer-specific) into .env.local.
+# .env.production is tracked on purpose: VITE_CONVEX_URL is a public value that
+# ships inside the JS bundle regardless, and keeping it in the repo means a fresh
+# clone can build and deploy without extra setup.
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
 .DS_Store
 *.log

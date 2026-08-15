@@ -1,24 +1,16 @@
 /**
  * Form submission layer.
  *
- * The original site wrote directly to Supabase from the browser. That is being
- * replaced with Convex, so every write goes through this module and nothing else
- * in the app knows where data lands. When Convex is wired up, the three
- * functions below are the only things that need to change.
- *
- * ⚠️  Until then `BACKEND` is "none": submissions are validated and echoed to the
- * console but NOT persisted anywhere. `persisted: false` is returned so callers
- * can tell the difference. Do not drive real traffic at the waitlist until this
- * is pointed at Convex, or signups will be lost.
+ * Every write the site makes goes through here, so no page needs to know which
+ * backend is behind it. Currently Convex; previously Supabase.
  */
 
-const BACKEND: "none" | "convex" = "none";
+import { api } from "../../convex/_generated/api";
+import { convex } from "./convex";
 
 export interface SubmitResult {
   ok: boolean;
-  /** False when the payload was accepted by the UI but never stored. */
-  persisted: boolean;
-  /** True when the email is already on the waitlist. */
+  /** True when the email was already on the waitlist. */
   duplicate?: boolean;
   error?: string;
 }
@@ -31,38 +23,33 @@ export interface WaitlistSignup {
 }
 
 export interface MerchantApplication {
-  business_name: string;
+  businessName: string;
   category?: string;
-  contact_name: string;
+  contactName: string;
   role?: string;
   email: string;
   locations: number;
   message?: string;
 }
 
-function unconfigured(kind: string, payload: unknown): SubmitResult {
-  console.warn(
-    `[afterglow] ${kind} submitted but no backend is configured — this payload was discarded.`,
-    payload,
-  );
-  return { ok: true, persisted: false };
-}
-
 export async function submitWaitlistSignup(signup: WaitlistSignup): Promise<SubmitResult> {
-  if (BACKEND === "none") return unconfigured("waitlist signup", signup);
-
-  // TODO(convex): replace with
-  //   await convex.mutation(api.waitlist.signUp, signup)
-  // and map a unique-constraint failure to { ok: true, persisted: true, duplicate: true }.
-  throw new Error("Convex backend selected but not implemented");
+  try {
+    const { duplicate } = await convex.mutation(api.waitlist.signUp, signup);
+    return { ok: true, duplicate };
+  } catch (error) {
+    console.error("Waitlist signup failed", error);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
 }
 
 export async function submitMerchantApplication(application: MerchantApplication): Promise<SubmitResult> {
-  if (BACKEND === "none") return unconfigured("merchant application", application);
-
-  // TODO(convex): replace with
-  //   await convex.mutation(api.merchants.apply, application)
-  throw new Error("Convex backend selected but not implemented");
+  try {
+    await convex.mutation(api.merchants.apply, application);
+    return { ok: true };
+  } catch (error) {
+    console.error("Merchant application failed", error);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
 }
 
 export type UnsubscribeLookup =
@@ -73,22 +60,20 @@ export type UnsubscribeLookup =
 export async function lookupUnsubscribeToken(token: string): Promise<UnsubscribeLookup> {
   if (!token) return { status: "invalid", message: "Missing unsubscribe token." };
 
-  if (BACKEND === "none") {
-    return {
-      status: "invalid",
-      message: "Unsubscribe links are not active yet. Please contact us and we will remove you manually.",
-    };
+  try {
+    return await convex.query(api.email.lookupUnsubscribeToken, { token });
+  } catch (error) {
+    console.error("Unsubscribe lookup failed", error);
+    return { status: "invalid", message: "Could not validate this link. Please try again." };
   }
-
-  // TODO(convex): replace with
-  //   await convex.query(api.email.lookupUnsubscribeToken, { token })
-  throw new Error("Convex backend selected but not implemented");
 }
 
 export async function confirmUnsubscribe(token: string): Promise<SubmitResult> {
-  if (BACKEND === "none") return unconfigured("unsubscribe", { token });
-
-  // TODO(convex): replace with
-  //   await convex.mutation(api.email.unsubscribe, { token })
-  throw new Error("Convex backend selected but not implemented");
+  try {
+    const { ok } = await convex.mutation(api.email.unsubscribe, { token });
+    return ok ? { ok: true } : { ok: false, error: "This unsubscribe link is invalid or expired." };
+  } catch (error) {
+    console.error("Unsubscribe failed", error);
+    return { ok: false, error: "Network error. Please try again." };
+  }
 }

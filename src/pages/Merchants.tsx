@@ -24,9 +24,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { submitMerchantApplication } from "@/lib/submissions";
 
 const merchantSchema = z.object({
-  business_name: z.string().trim().min(1, { message: "Business name is required" }).max(200),
+  businessName: z.string().trim().min(1, { message: "Business name is required" }).max(200),
   category: z.string().trim().max(100).optional(),
-  contact_name: z.string().trim().min(1, { message: "Your name is required" }).max(100),
+  contactName: z.string().trim().min(1, { message: "Your name is required" }).max(100),
   role: z.string().trim().max(100).optional(),
   email: z.string().trim().email({ message: "Please enter a valid email" }).max(255),
   locations: z.number().int().min(1).max(10000),
@@ -82,9 +82,9 @@ const Merchants = () => {
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [form, setForm] = useState({
-    business_name: "",
+    businessName: "",
     category: "",
-    contact_name: "",
+    contactName: "",
     role: "",
     email: "",
     locations: 1,
@@ -104,9 +104,9 @@ const Merchants = () => {
     setPending(true);
     const data = parsed.data;
     const result = await submitMerchantApplication({
-      business_name: data.business_name,
+      businessName: data.businessName,
       category: data.category || undefined,
-      contact_name: data.contact_name,
+      contactName: data.contactName,
       role: data.role || undefined,
       email: data.email.toLowerCase(),
       locations: data.locations,
@@ -179,8 +179,8 @@ const Merchants = () => {
                           required
                           maxLength={200}
                           placeholder="Lumière Skin Studio"
-                          value={form.business_name}
-                          onChange={(e) => setForm({ ...form, business_name: e.target.value })}
+                          value={form.businessName}
+                          onChange={(e) => setForm({ ...form, businessName: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -203,8 +203,8 @@ const Merchants = () => {
                           required
                           maxLength={100}
                           placeholder="Ava Rose"
-                          value={form.contact_name}
-                          onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                          value={form.contactName}
+                          onChange={(e) => setForm({ ...form, contactName: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
