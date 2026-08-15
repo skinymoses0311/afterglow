@@ -4,6 +4,8 @@ import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Container } from "./Container";
+import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -13,26 +15,14 @@ const NAV_LINKS = [
   { to: "/merchants", label: "For Merchants" },
 ];
 
-const Wordmark = () => (
-  <span
-    className="grid h-11 w-11 place-items-center rounded-sm bg-primary font-display text-[10px] font-extrabold uppercase leading-[1.05] tracking-tight text-primary-foreground"
-    style={{ backgroundColor: "hsl(357 80% 79%)" }}
-  >
-    <span className="flex flex-col items-center">
-      <span>After</span>
-      <span>Glow</span>
-    </span>
-  </span>
-);
-
 export const Header = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-md safe-top safe-x">
-      <div className="container flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/[0.72] backdrop-blur-md safe-top safe-x">
+      <Container className="flex h-[72px] items-center justify-between">
         <Link to="/" aria-label="AfterGlow home" className="flex items-center">
-          <Wordmark />
+          <Logo />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -43,7 +33,7 @@ export const Header = () => {
               end={link.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "rounded-full px-4 py-2 text-sm text-foreground/70 transition-colors hover:text-foreground",
+                  "inline-flex items-center rounded-full px-4 py-2 text-sm text-foreground/70 transition-colors hover:text-foreground",
                   isActive && "bg-secondary text-foreground",
                 )
               }
@@ -57,7 +47,7 @@ export const Header = () => {
           <Button asChild variant="ghost" className="hidden sm:inline-flex">
             <Link to="/waitlist">Join Waitlist</Link>
           </Button>
-          <Button asChild className="hidden sm:inline-flex">
+          <Button asChild className="hidden rounded-full sm:inline-flex">
             <Link to="/book">Book Now</Link>
           </Button>
 
@@ -92,17 +82,17 @@ export const Header = () => {
               </nav>
 
               <div className="mt-6 flex flex-col gap-2">
-                <Button asChild variant="outline" onClick={() => setOpen(false)}>
+                <Button asChild variant="outline" className="rounded-full" onClick={() => setOpen(false)}>
                   <Link to="/waitlist">Join Waitlist</Link>
                 </Button>
-                <Button asChild onClick={() => setOpen(false)}>
+                <Button asChild className="rounded-full" onClick={() => setOpen(false)}>
                   <Link to="/book">Book Now</Link>
                 </Button>
               </div>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
+      </Container>
     </header>
   );
 };

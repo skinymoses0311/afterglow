@@ -37,7 +37,7 @@ npm run lint     # typecheck only
 
 | Path           | Page          | Notes                                                     |
 | -------------- | ------------- | --------------------------------------------------------- |
-| `/`            | Index         | Hero, "how it works", split customer/merchant cards       |
+| `/`            | Index         | "Editorial Bloom" — 8 sections, incl. waitlist capture     |
 | `/waitlist`    | Waitlist      | Signup form with treatment multi-select                   |
 | `/merchants`   | Merchants     | Partner application form + benefits grid                  |
 | `/book`        | Book          | Category tabs; shows "COMING SOON" until partners are live |
@@ -94,6 +94,39 @@ backend for them exist and are tested.
 The booking modal is a design mock — it takes no payment and writes nothing.
 `TREATMENTS` in `src/pages/Book.tsx` is empty, so the page shows "COMING SOON",
 matching the live site.
+
+## Homepage — "Editorial Bloom"
+
+The homepage is built from variant A of the AfterGlow Design System
+(`design/AfterGlow Design System.zip`, source at
+`explorations/homepage/VariantA.jsx`). Sections, in order: hero, trust strip,
+how-it-works, categories, audiences, testimonial, FAQ, waitlist CTA.
+
+Three things differ deliberately from the mockup:
+
+**The hero grid follows the spec, not the mockup's render.** The design says
+`gridTemplateColumns: "1.05fr .95fr"`. The mockup does not render that way,
+because its `<image-slot>` placeholder applies `aspect-ratio: 3/2` internally;
+combined with the fixed `height: 540` that forces an 810px intrinsic width,
+overflowing the grid and squeezing the text column to 303px — the exact
+min-content width of "AFTER" at 92px. That is a placeholder artifact, not the
+design, so the built page uses the specified 1.05/0.95 split.
+
+**It is responsive.** The mockup is desktop-only — fixed pixel type and hard
+`repeat(3, 1fr)` grids, no media queries. Headings here use `clamp()` and the
+grids collapse at `sm`/`md`/`lg`. Verified free of horizontal overflow from
+320px to 1920px.
+
+**The trust strip scrolls on small screens.** The design centres one nowrap row
+and lets it clip at both edges, which is fine on a desktop but would hide most
+of the row on a phone, so below `md` it scrolls instead.
+
+### Images
+
+The design ships three empty image slots — a hero portrait, a post-treatment
+shot, and a round client portrait. No photography was supplied, so these render
+as on-brand blush panels via `src/components/ImagePlaceholder.tsx` with the
+brief still visible. Swap each for an `<img>` as the shots arrive.
 
 ## Design tokens
 

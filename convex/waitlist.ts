@@ -27,10 +27,15 @@ export const signUp = mutation({
     if (existing) {
       // Someone re-submitting is almost always updating their preferences, and
       // re-subscribing if they had previously opted out.
+      //
+      // Treatments are only overwritten when the new submission actually names
+      // some. The homepage CTA captures an email and nothing else, so without
+      // this guard a quick signup there would wipe preferences the same person
+      // had already chosen on /waitlist.
       await ctx.db.patch(existing._id, {
         name: args.name ?? existing.name,
         city: args.city ?? existing.city,
-        treatments: args.treatments,
+        treatments: args.treatments.length > 0 ? args.treatments : existing.treatments,
         unsubscribedAt: undefined,
       });
       return { duplicate: true };
