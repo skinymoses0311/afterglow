@@ -51,15 +51,26 @@
     -webkit-tap-highlight-color: transparent;
     overflow-x: hidden;
   }
-}
 
-@layer utilities {
+  /* Base layer, not utilities, so `tracking-*` and `font-*` utilities can
+     override the display face — the hero subheading relies on this. */
+  h1,
+  h2,
+  h3,
   .font-display {
     font-family: Montserrat, ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
     font-weight: 700;
   }
 
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@layer utilities {
   .bg-blush {
     background: var(--gradient-blush);
   }
