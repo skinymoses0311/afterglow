@@ -22,6 +22,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitMerchantApplication } from "@/lib/submissions";
+import { trackEvent } from "@/lib/analytics";
+
+/** Bands rather than raw counts — keeps the dimension readable in GA4. */
+const locationsBand = (n: number): string => (n === 1 ? "1" : n <= 5 ? "2-5" : "6+");
 
 const merchantSchema = z.object({
   businessName: z.string().trim().min(1, { message: "Business name is required" }).max(200),
@@ -95,9 +99,12 @@ const Merchants = () => {
     event.preventDefault();
     if (pending) return;
 
+    trackEvent("af_form_submit", { af_form_id: "merchant" });
+
     const parsed = merchantSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      trackEvent("af_form_error", { af_form_id: "merchant", error_type: "validation" });
       return;
     }
 
@@ -116,8 +123,17 @@ const Merchants = () => {
 
     if (!result.ok) {
       toast.error(result.error ?? "Something went wrong. Please try again.");
+      trackEvent("af_form_error", { af_form_id: "merchant", error_type: "server" });
       return;
     }
+
+    // A custom name rather than generate_lead: B2B and B2C are different
+    // funnels, and GA4 marks key events by name only — you cannot key off a
+    // parameter value.
+    trackEvent("merchant_application", {
+      merchant_category: data.category || "unspecified",
+      locations_band: locationsBand(data.locations),
+    });
 
     setSubmitted(true);
     toast.success("Application received — we will be in touch within 48 hours.");
@@ -168,7 +184,7 @@ const Merchants = () => {
                     </p>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  <form id="merchant" name="merchant" onSubmit={handleSubmit} className="space-y-5">
                     <h2 className="font-display text-3xl">Become a partner</h2>
 
                     <div className="grid grid-cols-2 gap-4">

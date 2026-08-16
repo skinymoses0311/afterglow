@@ -3,6 +3,7 @@ import { Instagram, Mail } from "lucide-react";
 
 import { Container } from "./Container";
 import { Logo } from "./Logo";
+import { reopenConsent } from "@/components/ConsentBanner";
 
 /** Only some of these have pages yet; the rest stay as plain text until they do. */
 const COLUMNS: { title: string; items: { label: string; to?: string }[] }[] = [
@@ -15,7 +16,7 @@ const COLUMNS: { title: string; items: { label: string; to?: string }[] }[] = [
     ],
   },
   { title: "Company", items: [{ label: "About" }, { label: "Contact" }, { label: "Careers" }] },
-  { title: "Legal", items: [{ label: "Privacy" }, { label: "Terms" }, { label: "Complaints" }] },
+  { title: "Legal", items: [{ label: "Privacy", to: "/privacy" }, { label: "Terms" }, { label: "Complaints" }] },
 ];
 
 export const Footer = () => (
@@ -57,8 +58,15 @@ export const Footer = () => (
     </Container>
 
     <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-      © {new Date().getFullYear()} AfterGlow. All rights reserved. AfterGlow is not a lender; credit is subject to
-      status.
+      <p>
+        © {new Date().getFullYear()} AfterGlow. All rights reserved. AfterGlow is not a lender; credit is
+        subject to status.
+      </p>
+      {/* Consent has to be as easy to withdraw as it was to give, so this stays
+          reachable from every page. */}
+      <button type="button" onClick={reopenConsent} className="mt-1.5 underline underline-offset-2 hover:text-foreground">
+        Cookie settings
+      </button>
     </div>
   </footer>
 );

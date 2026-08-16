@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Check, LoaderCircle, X } from "lucide-react";
 
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { confirmUnsubscribe, lookupUnsubscribeToken } from "@/lib/submissions";
+import { getUnsubscribeToken } from "@/lib/unsubscribeToken";
 
 type State =
   | { status: "loading" }
@@ -16,8 +16,9 @@ type State =
   | { status: "invalid"; message: string };
 
 const Unsubscribe = () => {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  // Read from memory, not the URL: the token is stripped from the address bar
+  // at app entry so it can never reach an analytics event. See lib/unsubscribeToken.
+  const token = getUnsubscribeToken();
   const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {

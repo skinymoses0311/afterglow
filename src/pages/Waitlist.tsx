@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { submitWaitlistSignup } from "@/lib/submissions";
+import { trackEvent } from "@/lib/analytics";
 
 const TREATMENTS = [
   "Facials",
@@ -52,9 +53,15 @@ const Waitlist = () => {
     event.preventDefault();
     if (pending) return;
 
+    // Counts attempts. GA4's own form_submit cannot do this: enhanced
+    // measurement skips any submit where defaultPrevented is true, and every
+    // React form prevents default. Verified against the live tag.
+    trackEvent("af_form_submit", { af_form_id: "waitlist" });
+
     const parsed = waitlistSchema.safeParse(form);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      trackEvent("af_form_error", { af_form_id: "waitlist", error_type: "validation" });
       return;
     }
 
@@ -70,7 +77,16 @@ const Waitlist = () => {
 
     if (!result.ok) {
       toast.error(result.error ?? "Something went wrong. Please try again.");
+      trackEvent("af_form_error", { af_form_id: "waitlist", error_type: "server" });
       return;
+    }
+
+    // generate_lead only counts genuinely new signups, so the GA4 key-event
+    // total stays comparable with the Convex row count.
+    if (result.duplicate) {
+      trackEvent("waitlist_duplicate", { form_location: "waitlist_page" });
+    } else {
+      trackEvent("generate_lead", { lead_source: "waitlist_form", form_location: "waitlist_page" });
     }
 
     setSubmitted(true);
@@ -121,7 +137,7 @@ const Waitlist = () => {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form id="waitlist" name="waitlist" onSubmit={handleSubmit} className="space-y-5">
                   <h2 className="font-display text-3xl">Join the waitlist</h2>
 
                   <div className="space-y-2">

@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { submitWaitlistSignup } from "@/lib/submissions";
+import { trackEvent } from "@/lib/analytics";
 
 /* -------------------------------------------------------------- shared bits */
 
@@ -410,9 +411,12 @@ const Cta = () => {
     event.preventDefault();
     if (pending) return;
 
+    trackEvent("af_form_submit", { af_form_id: "home_cta" });
+
     const parsed = ctaSchema.safeParse(email);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      trackEvent("af_form_error", { af_form_id: "home_cta", error_type: "validation" });
       return;
     }
 
@@ -424,7 +428,16 @@ const Cta = () => {
 
     if (!result.ok) {
       toast.error(result.error ?? "Something went wrong. Please try again.");
+      trackEvent("af_form_error", { af_form_id: "home_cta", error_type: "server" });
       return;
+    }
+
+    // form_location distinguishes this quick capture from the full waitlist
+    // page, so the two entry points can be compared.
+    if (result.duplicate) {
+      trackEvent("waitlist_duplicate", { form_location: "home_cta" });
+    } else {
+      trackEvent("generate_lead", { lead_source: "waitlist_form", form_location: "home_cta" });
     }
 
     setDone(true);
@@ -460,7 +473,12 @@ const Cta = () => {
                 </div>
               ) : (
                 <>
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
+                  <form
+                    id="home_cta"
+                    name="home_cta"
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-3 sm:flex-row"
+                  >
                     <Input
                       type="email"
                       required
