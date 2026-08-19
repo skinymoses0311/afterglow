@@ -118,9 +118,32 @@ design, so the built page uses the specified 1.05/0.95 split.
 grids collapse at `sm`/`md`/`lg`. Verified free of horizontal overflow from
 320px to 1920px.
 
-**The trust strip scrolls on small screens.** The design centres one nowrap row
-and lets it clip at both edges, which is fine on a desktop but would hide most
-of the row on a phone, so below `md` it scrolls instead.
+**The trust strip moves.** The design renders it as a static centred row that
+clips at both edges. It now drifts continuously and speeds up while the visitor
+scrolls past it — which also solves the clipping, since everything comes into
+view eventually rather than being permanently cut off on a phone.
+
+See `src/components/Marquee.tsx`. It drifts at 34 px/s and accelerates with
+scroll velocity up to 4×, easing back when scrolling stops. Speed is changed via
+the Web Animations API `playbackRate` rather than by rewriting an
+animation-duration, because the latter restarts the animation and makes the
+strip visibly jump. Two identical copies tile seamlessly — spacing lives inside
+each item rather than as a gap on the track, so one copy's width is exactly the
+distance to translate. It pauses entirely when off screen, and does not animate
+at all under `prefers-reduced-motion`.
+
+### Icons
+
+`public/favicon.ico` carries the brand mark at 16/32/48px, and
+`public/apple-touch-icon.png` the full stacked wordmark at 180px. Small sizes use
+an **A** monogram rather than the wordmark: "AFTER/GLOW" stacked is illegible at
+16px, whereas the monogram stays crisp. The previous favicon was Lovable's
+default — note the design system zip shipped that same file, so it is not a
+source for this.
+
+Regenerating them is a render-and-pack job rather than a design task: the mark is
+drawn in HTML with Montserrat, screenshotted at each size with Playwright, and
+the PNGs packed into an ICO (the format embeds PNG payloads directly).
 
 ### Images
 

@@ -23,6 +23,7 @@ import { z } from "zod";
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import { Marquee } from "@/components/Marquee";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,34 +133,6 @@ const Hero = () => (
       </div>
     </Container>
   </section>
-);
-
-/* ------------------------------------------------------------------ marquee */
-
-const MARQUEE_ITEMS = [
-  "0% interest, always",
-  "Nothing to pay upfront",
-  "Soft credit check only",
-  "Trusted UK partners",
-  "Three easy payments",
-];
-
-/**
- * Trust strip. The design centres a single nowrap row and lets it clip at both
- * edges on a wide screen. That is fine there, but on a phone it would hide most
- * of the row, so below md it scrolls instead of clipping.
- */
-const Marquee = () => (
-  <div className="overflow-x-auto bg-foreground py-[18px] text-background [scrollbar-width:none] md:overflow-hidden [&::-webkit-scrollbar]:hidden">
-    <div className="flex w-max items-center gap-10 px-6 font-display text-[13px] font-bold uppercase tracking-[0.22em] md:w-auto md:justify-center md:px-0">
-      {MARQUEE_ITEMS.map((item, i) => (
-        <span key={item} className="flex items-center gap-10 whitespace-nowrap">
-          {item}
-          {i < MARQUEE_ITEMS.length - 1 ? <span className="text-primary">✳</span> : null}
-        </span>
-      ))}
-    </div>
-  </div>
 );
 
 /* -------------------------------------------------------------------- steps */
