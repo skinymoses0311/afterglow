@@ -151,10 +151,28 @@ the PNGs packed into an ICO (the format embeds PNG payloads directly).
 
 ### Images
 
-The design ships three empty image slots — a hero portrait, a post-treatment
-shot, and a round client portrait. No photography was supplied, so these render
-as on-brand blush panels via `src/components/ImagePlaceholder.tsx` with the
-brief still visible. Swap each for an `<img>` as the shots arrive.
+The hero portrait is real: `src/assets/hero-treatment.webp`, with the master PNG
+kept at `design/homepage/afterglow-homepage-treatment-banner.png`.
+
+**Imported, not served from `public/`.** A file in `public/` keeps its name, so
+it falls through to nginx's catch-all `location /`, which sets no `Cache-Control`
+at all — and being unhashed, it could never be cache-busted either. Importing it
+makes Vite emit a content-hashed file into `/assets/`, which is already served
+`immutable` for a year.
+
+The source is landscape (1095×615) and the slot is portrait (~513×540), so about
+half the width is cropped. Only the horizontal axis is adjustable: the image
+scales to exactly the box height, leaving no vertical overflow to position.
+`objectPosition: "35% 50%"` keeps the eye, frond and lips in frame and lands the
+price card over her hand rather than her mouth.
+
+Worth knowing if the layout changes: at 1095×615 the source is only just enough
+for this slot at 1× and will look soft on a high-DPI screen. A larger original
+would be an easy win.
+
+The remaining slot — "Client after a treatment" in the audiences section — still
+has no photography and renders as an on-brand blush panel via
+`src/components/ImagePlaceholder.tsx` with the brief visible.
 
 ## Analytics and consent
 

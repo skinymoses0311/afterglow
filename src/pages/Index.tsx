@@ -23,6 +23,10 @@ import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
 import { ImagePlaceholder } from "@/components/ImagePlaceholder";
 import { Marquee } from "@/components/Marquee";
+// Imported rather than referenced from public/, so Vite emits it with a content
+// hash into /assets/ — which nginx serves immutable. A file in public/ keeps its
+// name, falls through to nginx's catch-all location, and gets no Cache-Control.
+import heroTreatment from "@/assets/hero-treatment.webp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,10 +109,20 @@ const Hero = () => (
       {/* The price card overlaps the portrait on desktop; below lg it stacks so
           nothing is clipped on a narrow screen. */}
       <div className="relative">
-        <ImagePlaceholder
-          caption="Hero portrait — treatment in progress"
-          align="top"
-          className="h-[380px] w-full sm:h-[540px]"
+        {/* The source is landscape and the slot is portrait, so roughly half the
+            width is cropped. Only the horizontal axis matters here — the image
+            scales to exactly the box height, so there is no vertical overflow to
+            position. 35% keeps the eye, frond and lips in frame and puts the
+            price card over her hand rather than her mouth. */}
+        <img
+          src={heroTreatment}
+          alt="A woman resting her hand against her cheek with her eyes closed, a palm frond crossing the frame."
+          width={1095}
+          height={615}
+          fetchPriority="high"
+          decoding="async"
+          className="h-[380px] w-full rounded-[28px] object-cover sm:h-[540px]"
+          style={{ objectPosition: "35% 50%" }}
         />
 
         <div className="mt-6 w-full rounded-3xl bg-card p-[22px] shadow-soft lg:absolute lg:-left-[46px] lg:bottom-11 lg:mt-0 lg:w-[300px]">
