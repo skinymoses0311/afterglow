@@ -8,7 +8,6 @@ import {
   Flower2,
   Heart,
   LoaderCircle,
-  Quote,
   Scissors,
   ShieldCheck,
   Sparkles,
@@ -273,28 +272,6 @@ const Audiences = () => (
   </Container>
 );
 
-/* -------------------------------------------------------------------- quote */
-
-const Testimonial = () => (
-  <section className="bg-secondary py-20 md:py-24">
-    <Container className="grid items-center gap-12 md:grid-cols-[auto_1fr]">
-      <ImagePlaceholder
-        caption="Client portrait"
-        rounded="rounded-full"
-        className="mx-auto h-[200px] w-[200px] shrink-0 md:mx-0"
-      />
-      <div>
-        <Quote className="h-[30px] w-[30px] text-primary" />
-        <p className="mt-4 max-w-[760px] text-pretty font-display text-[clamp(1.5rem,3.5vw,2.125rem)] font-bold leading-[1.25] tracking-[-0.02em]">
-          I had been putting off the same appointment for a year. Splitting it into three made it something I could
-          actually book.
-        </p>
-        <p className="mt-[22px] text-sm text-muted-foreground">Ava R. · London · Waitlist member</p>
-      </div>
-    </Container>
-  </section>
-);
-
 /* ---------------------------------------------------------------------- faq */
 
 const FAQ_ITEMS = [
@@ -494,7 +471,6 @@ const Index = () => (
     <Steps />
     <Categories />
     <Audiences />
-    <Testimonial />
     <Faq />
     <Cta />
   </Layout>

@@ -101,7 +101,11 @@ matching the live site.
 The homepage is built from variant A of the AfterGlow Design System
 (`design/AfterGlow Design System.zip`, source at
 `explorations/homepage/VariantA.jsx`). Sections, in order: hero, trust strip,
-how-it-works, categories, audiences, testimonial, FAQ, waitlist CTA.
+how-it-works, categories, audiences, FAQ, waitlist CTA.
+
+The design's testimonial section has been removed. Its quote — "Ava R. · London
+· Waitlist member" — was placeholder copy from the mockup, and a fabricated
+customer testimonial does not belong on a live consumer-credit site.
 
 Three things differ deliberately from the mockup:
 
