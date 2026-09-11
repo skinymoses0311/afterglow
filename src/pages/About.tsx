@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
-import { ImagePlaceholder } from "@/components/ImagePlaceholder";
+import founderPhoto from "@/assets/founder-louisa.webp";
 import { Button } from "@/components/ui/button";
 
 const Eyebrow = ({ children }: { children: string }) => (
@@ -81,11 +81,14 @@ const About = () => (
 
     <Container className="py-20 md:py-[104px]">
       <div className="grid items-center gap-12 md:grid-cols-[auto_1fr] md:gap-16">
-        {/* TODO: swap for Louisa's headshot once the file is in the repo. */}
-        <ImagePlaceholder
-          caption="Louisa, founder"
-          rounded="rounded-3xl"
-          className="mx-auto h-[340px] w-full max-w-[300px] shrink-0 md:mx-0 md:h-[400px] md:w-[320px] md:max-w-none"
+        <img
+          src={founderPhoto}
+          alt="Louisa, founder of AfterGlow."
+          width={1036}
+          height={900}
+          loading="lazy"
+          decoding="async"
+          className="mx-auto h-[340px] w-full max-w-[300px] shrink-0 rounded-3xl object-cover md:mx-0 md:h-[400px] md:w-[320px] md:max-w-none"
         />
 
         <div>

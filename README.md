@@ -162,8 +162,16 @@ the PNGs packed into an ICO (the format embeds PNG payloads directly).
 
 ### Images
 
-The hero portrait is real: `src/assets/hero-treatment.webp`, with the master PNG
-kept at `design/homepage/afterglow-homepage-treatment-banner.png`.
+Two real photographs, both imported (not served from `public/`) so Vite
+content-hashes them into `/assets/`, which nginx serves immutable:
+
+| File | Source master | Size |
+| ---- | ------------- | ---- |
+| `src/assets/hero-treatment.webp` | `design/homepage/afterglow-homepage-treatment-banner.png` | 39KB from 148KB |
+| `src/assets/founder-louisa.webp` | `design/homepage/Meet the Founder.png` | 52KB from 1.8MB |
+
+The founder photo is encoded at 1036×900 — enough to fill its 320×400 slot on a
+2× display without upscaling, and no larger.
 
 **Imported, not served from `public/`.** A file in `public/` keeps its name, so
 it falls through to nginx's catch-all `location /`, which sets no `Cache-Control`
@@ -181,8 +189,8 @@ Worth knowing if the layout changes: at 1095×615 the source is only just enough
 for this slot at 1× and will look soft on a high-DPI screen. A larger original
 would be an easy win.
 
-The remaining slot — "Client after a treatment" in the audiences section — still
-has no photography and renders as an on-brand blush panel via
+One slot still has no photography — "Client after a treatment" in the audiences
+section — and renders as an on-brand blush panel via
 `src/components/ImagePlaceholder.tsx` with the brief visible.
 
 ## Analytics and consent
