@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const apply = mutation({
   args: {
@@ -15,10 +16,14 @@ export const apply = mutation({
   handler: async (ctx, args) => {
     // Unlike the waitlist, repeat applications are kept rather than merged —
     // a second enquiry from the same business is worth seeing on its own.
-    await ctx.db.insert("merchantApplications", {
+    const id = await ctx.db.insert("merchantApplications", {
       ...args,
       email: args.email.trim().toLowerCase(),
     });
+    // Atomic with the insert: if the row commits, the notification attempt is
+    // guaranteed to run. A merchant lead is worth more than a contact enquiry
+    // and the site promises a reply within 48 hours.
+    await ctx.scheduler.runAfter(0, internal.notify.merchantApplication, { id, attempt: 0 });
     return null;
   },
 });

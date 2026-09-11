@@ -50,5 +50,9 @@ export default defineSchema({
     email: v.string(),
     locations: v.number(),
     message: v.optional(v.string()),
+    /** Notification state — see the note on contactEnquiries. */
+    notifiedAt: v.optional(v.number()),
+    notifyAttempts: v.optional(v.number()),
+    notifyError: v.optional(v.string()),
   }).index("by_email", ["email"]),
 });

@@ -127,10 +127,14 @@ Unsubscribe links work off an opaque per-signup token (`?token=…`), never the
 address itself. Nothing currently *sends* those emails; the page and the
 backend for them exist and are tested.
 
-## Contact enquiry notifications
+## Enquiry notifications
 
-When a contact enquiry is submitted, `convex/contact.ts` schedules
-`notify:contactEnquiry`, which emails the team via Resend. Scheduling happens
+Contact enquiries and merchant applications both email the team via Resend —
+both are things a human has to answer. Waitlist signups deliberately do not;
+they are bulk, and per-signup mail would be noise.
+
+`convex/contact.ts` and `convex/merchants.ts` each schedule their notification
+action on insert. Scheduling happens
 inside the mutation, so it is atomic with the insert: if the row commits, the
 attempt is guaranteed to run. The enquiry is never at risk from a mail failure.
 
@@ -159,9 +163,10 @@ cleanup crons for.
 
 | Variable | Purpose |
 | -------- | ------- |
-| `RESEND_API_KEY` | Resend API key. **Secret.** |
+| `RESEND_API_KEY` | Resend API key. **Secret.** Deliberately the *send-only* key, not the full-access one — the runtime never needs to manage domains. |
 | `RESEND_FROM` | Sending identity; must be on a verified Resend domain |
-| `CONTACT_NOTIFY_TO` | Where notifications land |
+| `CONTACT_NOTIFY_TO` | Where contact enquiries land |
+| `MERCHANT_NOTIFY_TO` | Where merchant applications land; falls back to `CONTACT_NOTIFY_TO` |
 
 ```bash
 CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" npx convex env set RESEND_API_KEY
@@ -177,10 +182,11 @@ No Resend sending domain is verified, so sends currently fail with
 `403 … domain is not verified`, recorded in `notifyError`. That is the system
 working as designed — the enquiry is stored and the hourly sweep keeps retrying.
 
-To finish: verify `notifications.afterglowcredit.com` in the Resend dashboard
-(the API key is send-scoped and cannot do this), add the DKIM/SPF records it
-issues — **in GoDaddy, which hosts the `.com` DNS, not Hostinger, which only
-hosts `.online`** — then no code change is needed. The sweep drains the backlog.
+The domain `notifications.afterglowcredit.com` has been created in Resend
+(eu-west-1, matching Convex). What remains is adding its four DNS records **in
+GoDaddy, which hosts the `.com` DNS — not Hostinger, which only hosts
+`.online`** — and pressing Verify. No code change is needed afterwards: the
+hourly sweep drains the backlog.
 
 A subdomain of `.com` is the right choice because the recipients are `@afterglowcredit.com`
 mailboxes and that domain publishes `p=quarantine` with relaxed alignment, so a
