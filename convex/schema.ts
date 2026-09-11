@@ -31,6 +31,15 @@ export default defineSchema({
     /** Which of the routes on the contact page the sender picked. */
     enquiryType: v.string(),
     message: v.string(),
+    /**
+     * Notification state. These exist so that "did a human actually get told
+     * about this enquiry" is answerable from the same table you already look
+     * at — a swallowed send error would otherwise be indistinguishable from
+     * success.
+     */
+    notifiedAt: v.optional(v.number()),
+    notifyAttempts: v.optional(v.number()),
+    notifyError: v.optional(v.string()),
   }).index("by_email", ["email"]),
 
   merchantApplications: defineTable({

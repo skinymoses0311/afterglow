@@ -84,12 +84,38 @@ URL the deployed build talks to — that value is public, since Vite inlines it
 into the bundle. The **deploy key is a secret** and lives outside the repo, at
 `~/.convex-deploy-key` on the VPS.
 
-### ⚠️ This points at a development deployment
+### Deployments and keys
 
-`.env.production` currently targets `veracious-viper-240`, which is a Convex
-*dev* deployment. Dev deployments are per-developer and can be reset, so before
-real launch traffic: create a production deployment, generate a production
-deploy key, update `.env.production`, and redeploy.
+| | Deployment | Deploy key |
+| --- | --- | --- |
+| Production (the live site) | `effervescent-quail-296` (eu-west-1) | `~/.convex-deploy-key-prod` |
+| Development (local only) | `veracious-viper-240` (eu-west-1) | `~/.convex-deploy-key` |
+
+Both keys are mode 600 and live **outside** the repo. Never `export
+CONVEX_DEPLOY_KEY` globally — it silently overrides `CONVEX_DEPLOYMENT`, so a
+stray export sends every later CLI call to the wrong deployment without
+complaining. Prefix it per command instead:
+
+```bash
+CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" npx convex deploy
+```
+
+`npx convex deploy` pushes the backend; `./deploy/deploy.sh` only builds and
+publishes the frontend and never touches Convex. **Backend goes first** — the
+other order leaves the new bundle calling functions that do not exist yet.
+
+The client URL cannot be derived from the deployment name: the region is part of
+the hostname, and the region-less form resolves but returns 404, so a guess fails
+at runtime with no DNS error to warn you. Get it authoritatively:
+
+```bash
+CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" npx convex env get CONVEX_CLOUD_URL
+```
+
+`.env.local` deliberately still points at the dev deployment, so local `npm run
+dev` cannot write to production. That also means **changing** `VITE_CONVEX_URL`
+in `.env.production` is safe but **deleting** the line is not — the build would
+silently fall back to `.env.local` and ship a bundle pointing at dev.
 
 ### Waitlist behaviour worth knowing
 
@@ -100,6 +126,65 @@ previous opt-out. The user sees "You are already on the list ✨".
 Unsubscribe links work off an opaque per-signup token (`?token=…`), never the
 address itself. Nothing currently *sends* those emails; the page and the
 backend for them exist and are tested.
+
+## Contact enquiry notifications
+
+When a contact enquiry is submitted, `convex/contact.ts` schedules
+`notify:contactEnquiry`, which emails the team via Resend. Scheduling happens
+inside the mutation, so it is atomic with the insert: if the row commits, the
+attempt is guaranteed to run. The enquiry is never at risk from a mail failure.
+
+**The send outcome is stored on the enquiry row** — `notifiedAt`,
+`notifyAttempts`, `notifyError`. This is the whole point: a swallowed send error
+is otherwise indistinguishable from success, so "did anyone actually get told
+about this enquiry" would be unanswerable. Any row with no `notifiedAt` is an
+enquiry nobody has been told about.
+
+Retries are 1m, 5m, 15m, 1h, 6h — about 7.3 hours of cover, deliberately inside
+Resend's 24h idempotency window so a retry cannot double-send (every request
+carries `Idempotency-Key: contact-<id>`). Permanent failures (400/401/403/404/422)
+stop immediately; no amount of retrying fixes an unverified domain. An hourly
+cron (`convex/crons.ts`) sweeps anything still unnotified after 15 minutes,
+covering the one case self-rescheduling cannot: an action killed before it could
+schedule its own retry.
+
+**Deliberately not using `@convex-dev/resend`.** Its durability claim is weaker
+than it looks: roughly 7.5 minutes of retry cover, and its failure callback only
+fires from the Resend webhook path, so a batch that exhausts retries dies
+silently in a component table with nothing to alert on. It would also add six
+transitive dependencies and a second copy of every enquiry body to write GDPR
+cleanup crons for.
+
+### Environment variables (set on the Convex deployment, never in the repo)
+
+| Variable | Purpose |
+| -------- | ------- |
+| `RESEND_API_KEY` | Resend API key. **Secret.** |
+| `RESEND_FROM` | Sending identity; must be on a verified Resend domain |
+| `CONTACT_NOTIFY_TO` | Where notifications land |
+
+```bash
+CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" npx convex env set RESEND_API_KEY
+```
+
+Never give any of these a `VITE_` prefix — Vite inlines every `VITE_*` variable
+into the public client bundle, including from gitignored env files. And note
+`.env.production` **is tracked in git**, so it takes public values only.
+
+### ⚠️ Email is not yet reaching anyone
+
+No Resend sending domain is verified, so sends currently fail with
+`403 … domain is not verified`, recorded in `notifyError`. That is the system
+working as designed — the enquiry is stored and the hourly sweep keeps retrying.
+
+To finish: verify `notifications.afterglowcredit.com` in the Resend dashboard
+(the API key is send-scoped and cannot do this), add the DKIM/SPF records it
+issues — **in GoDaddy, which hosts the `.com` DNS, not Hostinger, which only
+hosts `.online`** — then no code change is needed. The sweep drains the backlog.
+
+A subdomain of `.com` is the right choice because the recipients are `@afterglowcredit.com`
+mailboxes and that domain publishes `p=quarantine` with relaxed alignment, so a
+Resend DKIM signature on a subdomain aligns and passes.
 
 ### /book is still front-end only
 
