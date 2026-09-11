@@ -5,8 +5,12 @@
  * three states. Analytics never loads unless this says "granted".
  */
 
-const COOKIE = "ag_consent";
-const SIX_MONTHS_SECONDS = 60 * 60 * 24 * 182;
+// Name and duration are stated in the published Privacy and Cookie Policy, so
+// they are fixed by that document rather than chosen here.
+const COOKIE = "afterglow_cookie_consent";
+/** Legacy name, still read so an existing choice is not lost on this change. */
+const LEGACY_COOKIE = "ag_consent";
+const TWELVE_MONTHS_SECONDS = 60 * 60 * 24 * 365;
 
 export type Consent = "granted" | "denied";
 
@@ -18,12 +22,12 @@ function readCookie(name: string): string | null {
 
 /** null means the visitor has not chosen yet — show the banner. */
 export function getConsent(): Consent | null {
-  const value = readCookie(COOKIE);
+  const value = readCookie(COOKIE) ?? readCookie(LEGACY_COOKIE);
   return value === "granted" || value === "denied" ? value : null;
 }
 
 export function setConsent(value: Consent): void {
-  document.cookie = `${COOKIE}=${value}; max-age=${SIX_MONTHS_SECONDS}; path=/; SameSite=Lax`;
+  document.cookie = `${COOKIE}=${value}; max-age=${TWELVE_MONTHS_SECONDS}; path=/; SameSite=Lax`;
 }
 
 /**

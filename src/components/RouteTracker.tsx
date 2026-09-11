@@ -20,7 +20,10 @@ const TITLES: Record<string, string> = {
   "/merchants": "AfterGlow — For salons & clinics",
   "/book": "AfterGlow — Book a treatment",
   "/unsubscribe": "AfterGlow — Unsubscribe",
-  "/privacy": "AfterGlow — Privacy",
+  "/privacy": "AfterGlow — Privacy and Cookie Policy",
+  "/terms": "AfterGlow — Website Terms and Conditions",
+  "/about": "AfterGlow — About us",
+  "/contact": "AfterGlow — Contact us",
 };
 
 /**

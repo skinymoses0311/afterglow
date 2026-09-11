@@ -42,7 +42,10 @@ npm run lint     # typecheck only
 | `/merchants`   | Merchants     | Partner application form + benefits grid                  |
 | `/book`        | Book          | Category tabs; shows "COMING SOON" until partners are live |
 | `/unsubscribe` | Unsubscribe   | Token is stripped from the URL at entry — see below       |
-| `/privacy`     | Privacy       | Privacy notice; linked from the footer                    |
+| `/about`       | About         | Brand story and founder note                              |
+| `/contact`     | Contact       | Enquiry form, writes to `contactEnquiries`                |
+| `/privacy`     | Privacy       | Privacy and Cookie Policy (lazy-loaded)                   |
+| `/terms`       | Terms         | Website Terms and Conditions (lazy-loaded)                |
 | `*`            | NotFound      | 404                                                        |
 
 ## Backend
@@ -57,7 +60,15 @@ convex/
   waitlist.ts   signUp      — upserts by email, reports duplicates
   merchants.ts  apply       — inserts an application
   email.ts      lookupUnsubscribeToken / unsubscribe
+  contact.ts    submit      — contact form enquiries
 ```
+
+Waitlist rows carry `marketingConsent` and `marketingConsentAt`. Marketing
+consent is deliberately separate from joining the waitlist: joining runs on
+legitimate interests, marketing needs an explicit opt-in, so the checkbox starts
+unticked and the timestamp is stored as evidence. It is only written when the
+form actually offered the choice, so the homepage capture cannot silently revoke
+a consent given on `/waitlist`.
 
 Working on the backend:
 
@@ -230,6 +241,7 @@ with `af_form_error` covering failures.
 | `generate_lead` | New waitlist signup. Key event. Not fired for duplicates, so it matches the Convex row count |
 | `merchant_application` | Partner application. Key event. Custom name because B2B and B2C are different funnels and GA4 keys events by name only |
 | `af_form_submit` | An attempt, successful or not |
+| `contact_enquiry` | A contact form message, with `enquiry_type` |
 | `af_form_error` | Attempt rejected, `error_type` is `validation` or `server` |
 | `waitlist_duplicate` | Someone already on the list re-submitted |
 | `page_not_found` | A 404 route rendered |
@@ -239,11 +251,37 @@ of the same name — `form_id` in particular means the DOM id in GA4's own event
 so ours is `af_form_id`. Every custom parameter needs registering as an
 event-scoped custom dimension in the GA4 admin or it will not appear in reports.
 
-### Privacy
+### Legal pages
 
-`src/pages/Privacy.tsx` describes what the site actually collects. **It must be
-kept in step with the code** — if a form gains a field, or a third party is
-added, that page changes too.
+`src/pages/Privacy.tsx` and `src/pages/Terms.tsx` hold the documents supplied by
+AfterGlow's advisers, rendered through the shared furniture in
+`src/components/legal/LegalPage.tsx`. Both are lazy-loaded — they are large,
+static and rarely opened, and were adding ~47KB to the bundle every visitor
+downloads for the homepage.
+
+**Published as drafted.** The only edits were to internal section
+cross-references, which pointed at the wrong sections. Nine were corrected; no
+wording was altered:
+
+| Where | Was | Now |
+| ----- | --- | --- |
+| §1, §4 (×2), §5, §11, §13 | "section 17" for contact details | "section 16" |
+| §3.2 table | "section 7" for marketing | "section 5" |
+| §4, §9 | "section 14" for your rights | "section 13" |
+
+The "PART A: PRIVACY POLICY" heading is not rendered — there is no Part B, and
+the page title already says what the document is.
+
+**The cookie table is published verbatim at the client's instruction, and lists
+13 cookies the site does not set** — Meta, LinkedIn, TikTok and Google Ads
+pixels are not installed, and `_gid`/`_gat` are Universal Analytics cookies that
+GA4 does not set. Verified against the live site, which sets exactly three:
+`afterglow_cookie_consent`, `_ga` and `_ga_HJBJYG9743`. If those pixels are
+never added, the table should be trimmed.
+
+The consent cookie was renamed from `ag_consent` to `afterglow_cookie_consent`
+and its life extended to 12 months, because the published policy states both.
+The old name is still read so nobody's existing choice is lost.
 
 ## Design tokens
 

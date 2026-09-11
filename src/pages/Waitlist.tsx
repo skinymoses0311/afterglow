@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { Check, LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormPrivacyNotice, PolicyLink, LouisaMail } from "@/components/FormPrivacyNotice";
 import { submitWaitlistSignup } from "@/lib/submissions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -39,6 +41,10 @@ const Waitlist = () => {
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", city: "", treatments: [] as string[] });
+  // Separate from the waitlist itself: joining runs on legitimate interests,
+  // marketing needs an explicit opt-in, so it starts unticked and is stored
+  // with a timestamp as evidence.
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   const toggleTreatment = (treatment: string) => {
     setForm((prev) => ({
@@ -72,6 +78,7 @@ const Waitlist = () => {
       email: email.toLowerCase(),
       city: city || undefined,
       treatments,
+      marketingConsent,
     });
     setPending(false);
 
@@ -123,7 +130,8 @@ const Waitlist = () => {
             </ul>
           </div>
 
-          <Card className="rounded-3xl border-border/60 shadow-soft">
+          <div>
+            <Card className="rounded-3xl border-border/60 shadow-soft">
             <CardContent className="p-8 md:p-10">
               {submitted ? (
                 <div className="flex h-full flex-col items-center justify-center py-10 text-center">
@@ -213,6 +221,29 @@ const Waitlist = () => {
                     </div>
                   </div>
 
+                  {/* Unticked by default and never bundled into the submit
+                      button — marketing consent has to be a separate, positive act. */}
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-secondary/60 p-4 text-[13px] leading-relaxed text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={marketingConsent}
+                      onChange={(e) => setMarketingConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+                    />
+                    <span>
+                      I would like to receive marketing emails from AfterGlow about new products, services, offers and
+                      launch updates. I understand that I can unsubscribe at any time by clicking the unsubscribe link
+                      in any email or by contacting{" "}
+                      <a
+                        href="mailto:louisa@afterglowcredit.com"
+                        className="text-primary underline underline-offset-2 hover:no-underline"
+                      >
+                        louisa@afterglowcredit.com
+                      </a>
+                      . This is optional.
+                    </span>
+                  </label>
+
                   <Button type="submit" size="lg" disabled={pending} className="w-full rounded-full">
                     {pending ? (
                       <>
@@ -224,12 +255,28 @@ const Waitlist = () => {
                   </Button>
 
                   <p className="text-center text-xs text-muted-foreground">
-                    By joining, you agree to receive launch updates from AfterGlow.
+                    By joining our waitlist, you agree to our{" "}
+                    <Link to="/privacy" className="text-primary underline underline-offset-2 hover:no-underline">
+                      Privacy and Cookie Policy
+                    </Link>
+                    .
                   </p>
                 </form>
               )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <FormPrivacyNotice>
+              We will use the information you provide (your name, email address and any preferences you share) to
+              manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
+              this on the basis that you have asked us to keep you informed about our service, and because we have a
+              legitimate interest in managing and responding to expressions of interest. If you tick the marketing
+              checkbox below, we will also send you marketing communications about AfterGlow products and services; you
+              can withdraw your consent to marketing at any time. For full details of how we use your personal data,
+              including your rights, please see our <PolicyLink />. If you have any questions about how your data is
+              used, please contact us at <LouisaMail />.
+            </FormPrivacyNotice>
+          </div>
         </div>
       </section>
     </Layout>

@@ -20,6 +20,8 @@ export interface WaitlistSignup {
   email: string;
   city?: string;
   treatments: string[];
+  /** Undefined where the form did not ask — not the same as a declined tick. */
+  marketingConsent?: boolean;
 }
 
 export interface MerchantApplication {
@@ -48,6 +50,23 @@ export async function submitMerchantApplication(application: MerchantApplication
     return { ok: true };
   } catch (error) {
     console.error("Merchant application failed", error);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+export interface ContactEnquiry {
+  name: string;
+  email: string;
+  enquiryType: string;
+  message: string;
+}
+
+export async function submitContactEnquiry(enquiry: ContactEnquiry): Promise<SubmitResult> {
+  try {
+    await convex.mutation(api.contact.submit, enquiry);
+    return { ok: true };
+  } catch (error) {
+    console.error("Contact enquiry failed", error);
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }

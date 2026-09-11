@@ -14,6 +14,8 @@ export const signUp = mutation({
     email: v.string(),
     city: v.optional(v.string()),
     treatments: v.array(v.string()),
+    /** Absent means the form never asked — not the same as a declined tick. */
+    marketingConsent: v.optional(v.boolean()),
   },
   returns: v.object({ duplicate: v.boolean() }),
   handler: async (ctx, args) => {
@@ -37,6 +39,11 @@ export const signUp = mutation({
         city: args.city ?? existing.city,
         treatments: args.treatments.length > 0 ? args.treatments : existing.treatments,
         unsubscribedAt: undefined,
+        // Only touched when the form actually offered the choice, so the
+        // homepage capture cannot silently revoke a consent given on /waitlist.
+        ...(args.marketingConsent === undefined
+          ? {}
+          : { marketingConsent: args.marketingConsent, marketingConsentAt: Date.now() }),
       });
       return { duplicate: true };
     }
@@ -47,6 +54,9 @@ export const signUp = mutation({
       city: args.city,
       treatments: args.treatments,
       unsubscribeToken: newUnsubscribeToken(),
+      ...(args.marketingConsent === undefined
+        ? {}
+        : { marketingConsent: args.marketingConsent, marketingConsentAt: Date.now() }),
     });
 
     return { duplicate: false };

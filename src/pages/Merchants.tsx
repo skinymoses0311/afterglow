@@ -21,6 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FormPrivacyNotice, PolicyLink, LouisaMail } from "@/components/FormPrivacyNotice";
 import { submitMerchantApplication } from "@/lib/submissions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -171,7 +172,8 @@ const Merchants = () => {
               </div>
             </div>
 
-            <Card id="partner-form" className="scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
+            <div>
+              <Card id="partner-form" className="scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
               <CardContent className="p-8 md:p-10">
                 {submitted ? (
                   <div className="py-10 text-center">
@@ -280,10 +282,27 @@ const Merchants = () => {
                         "Apply to partner"
                       )}
                     </Button>
+
+                    <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                      By submitting this form, you confirm that AfterGlow may use the information you have provided to
+                      assess your partnership enquiry and to communicate with you about our platform. For full details
+                      of how we handle personal data, see our <PolicyLink />.
+                    </p>
                   </form>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+
+              <FormPrivacyNotice>
+                We will use the business contact information you provide to assess and respond to your enquiry about
+                partnering with AfterGlow, and to communicate with you about our platform and partnership
+                opportunities. We do this on the basis of our legitimate interests in evaluating potential business
+                relationships and taking steps necessary to enter into a contract. We may also send you communications
+                about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
+                contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
+                personal data, including your rights, please see our <PolicyLink />.
+              </FormPrivacyNotice>
+            </div>
           </div>
         </div>
       </section>

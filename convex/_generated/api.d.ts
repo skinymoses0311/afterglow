@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as contact from "../contact.js";
 import type * as email from "../email.js";
 import type * as merchants from "../merchants.js";
 import type * as waitlist from "../waitlist.js";
@@ -19,6 +20,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  contact: typeof contact;
   email: typeof email;
   merchants: typeof merchants;
   waitlist: typeof waitlist;

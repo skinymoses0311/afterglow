@@ -5,7 +5,7 @@ import { Container } from "./Container";
 import { Logo } from "./Logo";
 import { reopenConsent } from "@/components/ConsentBanner";
 
-/** Only some of these have pages yet; the rest stay as plain text until they do. */
+/** Every entry links to a real page — a footer link that goes nowhere reads as unfinished. */
 const COLUMNS: { title: string; items: { label: string; to?: string }[] }[] = [
   {
     title: "Product",
@@ -15,8 +15,14 @@ const COLUMNS: { title: string; items: { label: string; to?: string }[] }[] = [
       { label: "Join Waitlist", to: "/waitlist" },
     ],
   },
-  { title: "Company", items: [{ label: "About" }, { label: "Contact" }, { label: "Careers" }] },
-  { title: "Legal", items: [{ label: "Privacy", to: "/privacy" }, { label: "Terms" }, { label: "Complaints" }] },
+  { title: "Company", items: [{ label: "About Us", to: "/about" }, { label: "Contact Us", to: "/contact" }] },
+  {
+    title: "Legal",
+    items: [
+      { label: "Privacy and Cookie Policy", to: "/privacy" },
+      { label: "Website Terms and Conditions", to: "/terms" },
+    ],
+  },
 ];
 
 export const Footer = () => (

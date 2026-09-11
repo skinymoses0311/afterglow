@@ -11,10 +11,27 @@ export default defineSchema({
     unsubscribeToken: v.string(),
     /** Set once the person opts out; absent means still subscribed. */
     unsubscribedAt: v.optional(v.number()),
+    /**
+     * Marketing consent is separate from being on the waitlist: the waitlist
+     * itself runs on legitimate interests, marketing needs opt-in. Optional
+     * because the homepage capture has no checkbox — absent means never asked,
+     * which is not the same as declined.
+     */
+    marketingConsent: v.optional(v.boolean()),
+    /** When that choice was made. PECR reg 22 wants evidence, not just a flag. */
+    marketingConsentAt: v.optional(v.number()),
   })
     // Enforces one signup per address, and backs the duplicate check.
     .index("by_email", ["email"])
     .index("by_unsubscribe_token", ["unsubscribeToken"]),
+
+  contactEnquiries: defineTable({
+    name: v.string(),
+    email: v.string(),
+    /** Which of the routes on the contact page the sender picked. */
+    enquiryType: v.string(),
+    message: v.string(),
+  }).index("by_email", ["email"]),
 
   merchantApplications: defineTable({
     businessName: v.string(),
