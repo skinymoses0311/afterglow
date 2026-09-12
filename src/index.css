@@ -17,6 +17,11 @@
     --primary-foreground: 40 60% 96%;
     --primary-glow: 354 80% 90%;
 
+    /* Link text on light grounds. --primary is a pale blush — it measures
+       1.86:1 inside the privacy notice and 2.03:1 on white, against the 4.5:1
+       AA floor. Same hue family, dark enough to read. */
+    --link: 354 55% 44%;
+
     --secondary: 354 75% 92%;
     --secondary-foreground: 345 35% 22%;
 

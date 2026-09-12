@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormPrivacyNotice, PolicyLink, LouisaMail } from "@/components/FormPrivacyNotice";
+import { FormPrivacyNotice, PolicyLink, LouisaMail, formPrivacyNoticeId } from "@/components/FormPrivacyNotice";
 import { submitWaitlistSignup } from "@/lib/submissions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -105,10 +105,11 @@ const Waitlist = () => {
     <Layout>
       <section className="relative overflow-hidden bg-glow">
         <Container className="py-20 md:py-28">
-          {/* Top-aligned: the form column is much taller, and centring the copy
-              against it pushes the heading off the first screen. */}
-          <div className="grid items-start gap-12 md:grid-cols-2">
-            <div className="flex flex-col">
+          {/* Two columns, three children: copy and notice stack down column 1
+              while the card spans both rows of column 2. Top-aligned, and
+              row 2 takes the card's slack so the notice stays under the copy. */}
+          <div className="grid items-start gap-12 md:grid-cols-2 md:grid-rows-[auto_1fr]">
+            <div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground/70 backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5" /> Early access
               </span>
@@ -134,7 +135,7 @@ const Waitlist = () => {
               </ul>
             </div>
 
-            <Card className="rounded-3xl border-border/60 shadow-soft">
+            <Card className="md:col-start-2 md:row-start-1 md:row-span-2 rounded-3xl border-border/60 shadow-soft">
               <CardContent className="p-8 md:p-10">
                 {submitted ? (
                   <div className="flex h-full flex-col items-center justify-center py-10 text-center">
@@ -148,7 +149,13 @@ const Waitlist = () => {
                     </p>
                   </div>
                 ) : (
-                  <form id="waitlist" name="waitlist" onSubmit={handleSubmit} className="space-y-5">
+                  <form
+                    id="waitlist"
+                    name="waitlist"
+                    onSubmit={handleSubmit}
+                    aria-describedby={formPrivacyNoticeId}
+                    className="space-y-5"
+                  >
                     <h2 className="font-display text-3xl">Join the waitlist</h2>
 
                     <div className="space-y-2">
@@ -268,18 +275,18 @@ const Waitlist = () => {
                 )}
               </CardContent>
             </Card>
-          </div>
 
-          <FormPrivacyNotice>
-            We will use the information you provide (your name, email address and any preferences you share) to
-            manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
-            this on the basis that you have asked us to keep you informed about our service, and because we have a
-            legitimate interest in managing and responding to expressions of interest. If you tick the marketing
-            checkbox in the form, we will also send you marketing communications about AfterGlow products and services; you
-            can withdraw your consent to marketing at any time. For full details of how we use your personal data,
-            including your rights, please see our <PolicyLink />. If you have any questions about how your data is
-            used, please contact us at <LouisaMail />.
-          </FormPrivacyNotice>
+            <FormPrivacyNotice>
+              We will use the information you provide (your name, email address and any preferences you share) to
+              manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
+              this on the basis that you have asked us to keep you informed about our service, and because we have a
+              legitimate interest in managing and responding to expressions of interest. If you tick the marketing
+              checkbox in the form, we will also send you marketing communications about AfterGlow products and services; you
+              can withdraw your consent to marketing at any time. For full details of how we use your personal data,
+              including your rights, please see our <PolicyLink />. If you have any questions about how your data is
+              used, please contact us at <LouisaMail />.
+            </FormPrivacyNotice>
+          </div>
         </Container>
       </section>
     </Layout>

@@ -22,7 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FormPrivacyNotice, PolicyLink, LouisaMail } from "@/components/FormPrivacyNotice";
+import { FormPrivacyNotice, PolicyLink, LouisaMail, formPrivacyNoticeId } from "@/components/FormPrivacyNotice";
 import { submitMerchantApplication } from "@/lib/submissions";
 import { trackEvent } from "@/lib/analytics";
 
@@ -145,9 +145,10 @@ const Merchants = () => {
     <Layout>
       <section className="bg-glow">
         <Container className="pt-16 pb-12 md:pt-20 md:pb-16">
-          {/* Top-aligned: the application form is much taller than the copy,
-              and centring against it pushes the heading down the screen. */}
-          <div className="grid items-start gap-12 md:grid-cols-2">
+          {/* Two columns, three children: copy and notice stack down column 1
+              while the card spans both rows of column 2. Top-aligned, and
+              row 2 takes the card's slack so the notice stays under the copy. */}
+          <div className="grid items-start gap-12 md:grid-cols-2 md:grid-rows-[auto_1fr]">
             <div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground/70">
                 For merchants
@@ -175,7 +176,7 @@ const Merchants = () => {
               </div>
             </div>
 
-            <Card id="partner-form" className="scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
+            <Card id="partner-form" className="md:col-start-2 md:row-start-1 md:row-span-2 scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
               <CardContent className="p-8 md:p-10">
                 {submitted ? (
                   <div className="py-10 text-center">
@@ -188,7 +189,13 @@ const Merchants = () => {
                     </p>
                   </div>
                 ) : (
-                  <form id="merchant" name="merchant" onSubmit={handleSubmit} className="space-y-5">
+                  <form
+                    id="merchant"
+                    name="merchant"
+                    onSubmit={handleSubmit}
+                    aria-describedby={formPrivacyNoticeId}
+                    className="space-y-5"
+                  >
                     <h2 className="font-display text-3xl">Become a partner</h2>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -285,26 +292,33 @@ const Merchants = () => {
                       )}
                     </Button>
 
+                    {/* A pointer at the moment of submission, not a second copy
+                        of the notice — this used to paraphrase the whole thing. */}
                     <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                      By submitting this form, you confirm that AfterGlow may use the information you have provided to
-                      assess your partnership enquiry and to communicate with you about our platform. For full details
-                      of how we handle personal data, see our <PolicyLink />.
+                      We explain{" "}
+                      <a
+                        href={`#${formPrivacyNoticeId}`}
+                        className="text-link underline underline-offset-2 hover:no-underline"
+                      >
+                        how we use your information
+                      </a>{" "}
+                      on this page, and in full in our <PolicyLink />.
                     </p>
                   </form>
                 )}
               </CardContent>
             </Card>
-          </div>
 
-          <FormPrivacyNotice>
-            We will use the business contact information you provide to assess and respond to your enquiry about
-            partnering with AfterGlow, and to communicate with you about our platform and partnership
-            opportunities. We do this on the basis of our legitimate interests in evaluating potential business
-            relationships and taking steps necessary to enter into a contract. We may also send you communications
-            about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
-            contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
-            personal data, including your rights, please see our <PolicyLink />.
-          </FormPrivacyNotice>
+            <FormPrivacyNotice>
+              We will use the business contact information you provide to assess and respond to your enquiry about
+              partnering with AfterGlow, and to communicate with you about our platform and partnership
+              opportunities. We do this on the basis of our legitimate interests in evaluating potential business
+              relationships and taking steps necessary to enter into a contract. We may also send you communications
+              about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
+              contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
+              personal data, including your rights, please see our <PolicyLink />.
+            </FormPrivacyNotice>
+          </div>
         </Container>
       </section>
 
