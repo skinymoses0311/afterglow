@@ -91,9 +91,9 @@ const Waitlist = () => {
     // generate_lead only counts genuinely new signups, so the GA4 key-event
     // total stays comparable with the Convex row count.
     if (result.duplicate) {
-      trackEvent("waitlist_duplicate", { form_location: "waitlist_page" });
+      trackEvent("waitlist_duplicate", { af_form_id: "waitlist", form_location: "waitlist_page" });
     } else {
-      trackEvent("generate_lead", { lead_source: "waitlist_form", form_location: "waitlist_page" });
+      trackEvent("generate_lead", { af_form_id: "waitlist", lead_source: "waitlist_form", form_location: "waitlist_page" });
     }
 
     setSubmitted(true);

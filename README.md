@@ -391,13 +391,18 @@ with `af_form_error` covering failures.
 
 | Event | Meaning |
 | ----- | ------- |
-| `generate_lead` | New waitlist signup. Key event. Not fired for duplicates, so it matches the Convex row count |
+| `generate_lead` | New waitlist signup, from the waitlist page or the homepage CTA (`form_location`). Key event. Not fired for duplicates, so it matches the Convex row count |
 | `merchant_application` | Partner application. Key event. Custom name because B2B and B2C are different funnels and GA4 keys events by name only |
+| `contact_enquiry` | A contact form message, with `enquiry_type`. Key event |
 | `af_form_submit` | An attempt, successful or not |
-| `contact_enquiry` | A contact form message, with `enquiry_type` |
 | `af_form_error` | Attempt rejected, `error_type` is `validation` or `server` |
 | `waitlist_duplicate` | Someone already on the list re-submitted |
 | `page_not_found` | A 404 route rendered |
+
+Every form event — the attempt, any error, and the success event — carries
+`af_form_id` (`home_cta`, `waitlist`, `merchant` or `contact`), so one "Form ID"
+dimension slices the whole funnel per form. Success events keep their own names
+because key events are marked by name.
 
 Custom parameters are namespaced `af_*` where GA4 has an auto-collected parameter
 of the same name — `form_id` in particular means the DOM id in GA4's own events,

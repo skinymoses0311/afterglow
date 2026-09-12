@@ -71,7 +71,7 @@ const Contact = () => {
       return;
     }
 
-    trackEvent("contact_enquiry", { enquiry_type: parsed.data.enquiryType });
+    trackEvent("contact_enquiry", { af_form_id: "contact", enquiry_type: parsed.data.enquiryType });
     setSent(true);
     toast.success("Message sent — we will be in touch ✨");
   };

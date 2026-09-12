@@ -399,9 +399,9 @@ const Cta = () => {
     // form_location distinguishes this quick capture from the full waitlist
     // page, so the two entry points can be compared.
     if (result.duplicate) {
-      trackEvent("waitlist_duplicate", { form_location: "home_cta" });
+      trackEvent("waitlist_duplicate", { af_form_id: "home_cta", form_location: "home_cta" });
     } else {
-      trackEvent("generate_lead", { lead_source: "waitlist_form", form_location: "home_cta" });
+      trackEvent("generate_lead", { af_form_id: "home_cta", lead_source: "waitlist_form", form_location: "home_cta" });
     }
 
     setDone(true);

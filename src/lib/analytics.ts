@@ -81,6 +81,13 @@ export function loadAnalytics(): void {
   document.head.appendChild(script);
 }
 
+/**
+ * Every form event — the attempt, any error, and the success event itself —
+ * carries af_form_id, so the one registered "Form ID" dimension slices the
+ * whole funnel per form. Success events are still named per form
+ * (generate_lead, merchant_application, contact_enquiry) because GA4 marks
+ * key events by event name only.
+ */
 export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
   if (!ANALYTICS_ENABLED) {
     if (import.meta.env.DEV) console.debug("[ga4:inert]", name, params);

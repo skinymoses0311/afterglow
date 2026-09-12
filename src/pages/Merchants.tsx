@@ -133,6 +133,7 @@ const Merchants = () => {
     // funnels, and GA4 marks key events by name only — you cannot key off a
     // parameter value.
     trackEvent("merchant_application", {
+      af_form_id: "merchant",
       merchant_category: data.category || "unspecified",
       locations_band: locationsBand(data.locations),
     });
