@@ -1,5 +1,13 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
+
+/**
+ * How long after a successful confirmation we decline to send another. The
+ * success screen means a repeat submission needs a deliberate reload, but
+ * "updated my city twice" should not put two emails in someone's inbox.
+ */
+const RECONFIRM_COOLDOWN_MS = 60 * 60 * 1000;
 
 /** URL-safe random token for unsubscribe links. */
 function newUnsubscribeToken(): string {
@@ -34,6 +42,10 @@ export const signUp = mutation({
       // some. The homepage CTA captures an email and nothing else, so without
       // this guard a quick signup there would wipe preferences the same person
       // had already chosen on /waitlist.
+      const confirmedRecently =
+        existing.confirmedAt !== undefined && Date.now() - existing.confirmedAt < RECONFIRM_COOLDOWN_MS;
+      const send = (existing.confirmSends ?? 0) + 1;
+
       await ctx.db.patch(existing._id, {
         name: args.name ?? existing.name,
         city: args.city ?? existing.city,
@@ -44,19 +56,51 @@ export const signUp = mutation({
         ...(args.marketingConsent === undefined
           ? {}
           : { marketingConsent: args.marketingConsent, marketingConsentAt: Date.now() }),
+        ...(confirmedRecently
+          ? {}
+          : {
+              confirmSends: send,
+              confirmQueuedAt: Date.now(),
+              confirmReturning: true,
+              // Clear the previous outcome so the row reads as "this send is
+              // outstanding" rather than carrying a stale success.
+              confirmedAt: undefined,
+              confirmAttempts: 0,
+            }),
       });
+
+      if (!confirmedRecently) {
+        await ctx.scheduler.runAfter(0, internal.notify.waitlistConfirm, {
+          id: existing._id,
+          attempt: 0,
+          returning: true,
+          send,
+        });
+      }
       return { duplicate: true };
     }
 
-    await ctx.db.insert("waitlistSignups", {
+    const id = await ctx.db.insert("waitlistSignups", {
       name: args.name,
       email,
       city: args.city,
       treatments: args.treatments,
       unsubscribeToken: newUnsubscribeToken(),
+      confirmSends: 1,
+      confirmQueuedAt: Date.now(),
+      confirmReturning: false,
       ...(args.marketingConsent === undefined
         ? {}
         : { marketingConsent: args.marketingConsent, marketingConsentAt: Date.now() }),
+    });
+
+    // Atomic with the insert, like the enquiry forms: if the signup commits,
+    // the acknowledgement is guaranteed to be attempted.
+    await ctx.scheduler.runAfter(0, internal.notify.waitlistConfirm, {
+      id,
+      attempt: 0,
+      returning: false,
+      send: 1,
     });
 
     return { duplicate: false };

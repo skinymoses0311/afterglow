@@ -124,10 +124,14 @@ than creating a second one — latest treatment selection wins, and it clears an
 previous opt-out. The user sees "You are already on the list ✨".
 
 Unsubscribe links work off an opaque per-signup token (`?token=…`), never the
-address itself. Nothing currently *sends* those emails; the page and the
-backend for them exist and are tested.
+address itself. The waitlist confirmation email carries one, in the footer and
+as a `List-Unsubscribe` header.
 
-## Enquiry notifications
+## Email
+
+Two kinds of mail leave the app, and they fail independently.
+
+### To the team — enquiry notifications
 
 Contact enquiries and merchant applications both email the team via Resend —
 both are things a human has to answer. Waitlist signups deliberately do not;
@@ -146,11 +150,57 @@ enquiry nobody has been told about.
 
 Retries are 1m, 5m, 15m, 1h, 6h — about 7.3 hours of cover, deliberately inside
 Resend's 24h idempotency window so a retry cannot double-send (every request
-carries `Idempotency-Key: contact-<id>`). Permanent failures (400/401/403/404/422)
-stop immediately; no amount of retrying fixes an unverified domain. An hourly
-cron (`convex/crons.ts`) sweeps anything still unnotified after 15 minutes,
-covering the one case self-rescheduling cannot: an action killed before it could
-schedule its own retry.
+carries an `Idempotency-Key`). Permanent failures (400/401/403/404/422) stop
+immediately. An hourly cron (`convex/crons.ts`) sweeps anything still unsent
+after 15 minutes, covering the one case self-rescheduling cannot: an action
+killed before it could schedule its own retry.
+
+**One failure deliberately costs nothing.** A 403 naming the sending domain, or
+a missing environment variable, is a property of the deployment rather than of
+the row, so it is recorded without spending the row's attempt budget and
+without backing off. This matters more than it sounds: the sweep runs hourly
+against a 24-attempt ceiling, which is exactly 24 hours of cover, so without it
+every enquiry taken more than a day before the domain verified would already be
+dead by the time anyone fixed the DNS. As written, the backlog survives
+indefinitely and drains on the first sweep after verification.
+
+### To the sender — confirmations
+
+Every form also emails the person who submitted it, confirming receipt:
+waitlist (a separate wording for an address already on the list), contact
+enquiry, and merchant application. Templates live in `convex/mailTemplates.ts`.
+
+These are branded HTML with a plain-text alternative, built to email
+constraints rather than web ones — tables and inline styles, no images (the
+AfterGlow mark is a coloured table cell, so nothing to block), webfonts
+declared but never depended on, and every colour stated explicitly so a
+force-inverting dark mode has nothing to guess at. Every field that reaches a
+template came from a public unauthenticated form, so all of it is escaped.
+
+**They are deliberately not financial promotions.** They confirm an action the
+person just took; they do not offer, price, or induce a credit agreement. The
+£10 welcome credit that `/waitlist` advertises is absent on purpose.
+
+Confirmation outcomes live in their own fields — `confirmedAt`,
+`confirmAttempts`, `confirmError` — never the `notify*` ones. Telling the team
+and acknowledging the sender are separate sends that fail for separate reasons,
+and one must not overwrite the evidence of the other.
+
+The waitlist is the awkward one, because a re-submission reuses an existing row
+and there is therefore no per-submission id to key Resend's idempotency on.
+`confirmSends` supplies one: it counts confirmations queued for that row, so a
+retry of the same submission dedupes while a genuine second signup sends again.
+A successful confirmation also blocks another for an hour, so updating your city
+twice does not put two emails in your inbox.
+
+```bash
+npm run mail:preview     # renders every variant to .mail-preview/, sends nothing
+```
+
+The preview set is chosen for the awkward cases, not the happy path: a signup
+with nothing but an address (what the homepage CTA captures), a treatment list
+long enough to truncate, and a submission full of markup as a standing check
+that the templates escape.
 
 **Deliberately not using `@convex-dev/resend`.** Its durability claim is weaker
 than it looks: roughly 7.5 minutes of retry cover, and its failure callback only
@@ -165,8 +215,10 @@ cleanup crons for.
 | -------- | ------- |
 | `RESEND_API_KEY` | Resend API key. **Secret.** Deliberately the *send-only* key, not the full-access one — the runtime never needs to manage domains. |
 | `RESEND_FROM` | Sending identity; must be on a verified Resend domain |
-| `CONTACT_NOTIFY_TO` | Where contact enquiries land |
-| `MERCHANT_NOTIFY_TO` | Where merchant applications land; falls back to `CONTACT_NOTIFY_TO` |
+| `CONTACT_NOTIFY_TO` | Where contact enquiries land. Doubles as the `Reply-To` on waitlist and contact confirmations |
+| `MERCHANT_NOTIFY_TO` | Where merchant applications land, and the `Reply-To` on merchant confirmations; falls back to `CONTACT_NOTIFY_TO` |
+| `RESEND_CONFIRM_FROM` | Customer-facing sending identity. Optional; falls back to `RESEND_FROM`. Set separately so the address a customer sees is not the one internal alerts come from |
+| `SITE_ORIGIN` | Public origin used to build unsubscribe links. Change at the `.com` cutover, alongside `VITE_SITE_ORIGIN` |
 
 ```bash
 CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" npx convex env set RESEND_API_KEY
@@ -179,8 +231,10 @@ into the public client bundle, including from gitignored env files. And note
 ### ⚠️ Email is not yet reaching anyone
 
 No Resend sending domain is verified, so sends currently fail with
-`403 … domain is not verified`, recorded in `notifyError`. That is the system
-working as designed — the enquiry is stored and the hourly sweep keeps retrying.
+`403 … domain is not verified`, recorded in `notifyError` / `confirmError` as
+`waiting on sending domain`. That is the system working as designed — the
+submission is stored, no attempt budget is spent, and the hourly sweep keeps it
+queued indefinitely.
 
 The domain `notifications.afterglowcredit.com` has been created in Resend
 (eu-west-1, matching Convex). What remains is adding its four DNS records **in
@@ -446,9 +500,11 @@ expanding the certificate against a hostname still pointing at the old site
 burns a Let's Encrypt failure for nothing. It also checks the MX records still
 exist before touching anything.
 
-Two things it deliberately does not do, because they are not server-side:
+Three things it deliberately does not do, because they are not server-side:
 change `VITE_SITE_ORIGIN` in `.env.production` to the new origin and redeploy,
-and edit the GA4 data stream URL.
+set `SITE_ORIGIN` on the Convex deployment to match (it builds the unsubscribe
+links in outgoing email, so a stale value sends people to the old domain), and
+edit the GA4 data stream URL.
 
 `.online` keeps serving over HTTPS rather than being switched off — it was
 issued HSTS with a one-year max-age, so browsers that have seen it will refuse

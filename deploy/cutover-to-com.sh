@@ -80,3 +80,16 @@ curl -sS -o /dev/null -w '      https://afterglowcredit.online/waitlist -> %{htt
 
 say "Done. Canonical host is now https://afterglowcredit.com"
 echo "    Roll back with: sudo cp $BACKUP $SITE_AVAILABLE && sudo nginx -t && sudo systemctl reload nginx"
+
+cat <<'REMAINING'
+
+    Still to do by hand — none of these are server-side:
+
+      1. .env.production   VITE_SITE_ORIGIN -> https://afterglowcredit.com, then redeploy
+      2. Convex            SITE_ORIGIN -> https://afterglowcredit.com
+                           It builds the unsubscribe links in outgoing email, so a stale
+                           value keeps sending recipients to the old domain.
+                           CONVEX_DEPLOY_KEY="$(cat ~/.convex-deploy-key-prod)" \
+                             npx convex env set SITE_ORIGIN https://afterglowcredit.com
+      3. GA4               edit the data stream URL
+REMAINING

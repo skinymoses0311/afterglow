@@ -24,6 +24,9 @@ export const apply = mutation({
     // guaranteed to run. A merchant lead is worth more than a contact enquiry
     // and the site promises a reply within 48 hours.
     await ctx.scheduler.runAfter(0, internal.notify.merchantApplication, { id, attempt: 0 });
+    // Separate schedule: the applicant's acknowledgement and the team's alert
+    // fail independently, and the page promises a 48-hour reply either way.
+    await ctx.scheduler.runAfter(0, internal.notify.merchantConfirm, { id, attempt: 0 });
     return null;
   },
 });

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "tsc -b --noEmit"
+    "lint": "tsc -b --noEmit",
+    "mail:preview": "esbuild scripts/preview-emails.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/preview-emails.cjs --log-level=error && node node_modules/.cache/preview-emails.cjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",

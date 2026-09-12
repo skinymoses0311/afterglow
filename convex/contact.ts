@@ -18,8 +18,11 @@ export const submit = mutation({
       email: args.email.trim().toLowerCase(),
     });
     // Scheduling from the mutation is atomic with the insert: if the row
-    // commits, the notification attempt is guaranteed to be invoked.
+    // commits, both attempts are guaranteed to be invoked. They are separate
+    // schedules on purpose — telling the team and acknowledging the sender
+    // fail independently, and one should not take the other down with it.
     await ctx.scheduler.runAfter(0, internal.notify.contactEnquiry, { id, attempt: 0 });
+    await ctx.scheduler.runAfter(0, internal.notify.contactConfirm, { id, attempt: 0 });
     return null;
   },
 });

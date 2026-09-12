@@ -40,6 +40,9 @@ export default defineSchema({
     confirmSends: v.optional(v.number()),
     /** When the most recent confirmation was queued. Drives the sweep. */
     confirmQueuedAt: v.optional(v.number()),
+    /** Which wording the queued confirmation uses; the sweep has to retry the
+     *  same one, and it cannot be derived for rows that predate this feature. */
+    confirmReturning: v.optional(v.boolean()),
   })
     // Enforces one signup per address, and backs the duplicate check.
     .index("by_email", ["email"])

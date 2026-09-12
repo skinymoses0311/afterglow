@@ -11,6 +11,7 @@
 import type * as contact from "../contact.js";
 import type * as crons from "../crons.js";
 import type * as email from "../email.js";
+import type * as mailTemplates from "../mailTemplates.js";
 import type * as merchants from "../merchants.js";
 import type * as notify from "../notify.js";
 import type * as waitlist from "../waitlist.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   contact: typeof contact;
   crons: typeof crons;
   email: typeof email;
+  mailTemplates: typeof mailTemplates;
   merchants: typeof merchants;
   notify: typeof notify;
   waitlist: typeof waitlist;
