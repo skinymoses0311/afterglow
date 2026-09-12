@@ -131,14 +131,24 @@ as a `List-Unsubscribe` header.
 
 Two kinds of mail leave the app, and they fail independently.
 
-### To the team — enquiry notifications
+### To the team — notifications
 
-Contact enquiries and merchant applications both email the team via Resend —
-both are things a human has to answer. Waitlist signups deliberately do not;
-they are bulk, and per-signup mail would be noise.
+Every form emails the inbox that deals with it, with the submission's details
+and `Reply-To` set to the person who sent it, so hitting reply answers them:
 
-`convex/contact.ts` and `convex/merchants.ts` each schedule their notification
-action on insert. Scheduling happens
+| Form | Inbox | Variable |
+| ---- | ----- | -------- |
+| Contact enquiry | hello@afterglowcredit.com | `CONTACT_NOTIFY_TO` |
+| Waitlist signup (customers) | hello@afterglowcredit.com | `WAITLIST_NOTIFY_TO` |
+| Partner application (merchants) | merchants@afterglowcredit.com | `MERCHANT_NOTIFY_TO` |
+
+Waitlist notifications fire for genuinely new signups only. Re-submitting an
+address already on the list updates that row and sends the person a
+confirmation, but does not announce them to the inbox again. Signups from before
+these notifications existed are never announced retroactively.
+
+`convex/contact.ts`, `convex/merchants.ts` and `convex/waitlist.ts` each schedule
+their notification action on insert. Scheduling happens
 inside the mutation, so it is atomic with the insert: if the row commits, the
 attempt is guaranteed to run. The enquiry is never at risk from a mail failure.
 
@@ -217,6 +227,7 @@ cleanup crons for.
 | `RESEND_FROM` | Sending identity; must be on a verified Resend domain |
 | `CONTACT_NOTIFY_TO` | Where contact enquiries land. Doubles as the `Reply-To` on waitlist and contact confirmations |
 | `MERCHANT_NOTIFY_TO` | Where merchant applications land, and the `Reply-To` on merchant confirmations; falls back to `CONTACT_NOTIFY_TO` |
+| `WAITLIST_NOTIFY_TO` | Where new customer waitlist signups land; falls back to `CONTACT_NOTIFY_TO` |
 | `RESEND_CONFIRM_FROM` | Customer-facing sending identity. Optional; falls back to `RESEND_FROM`. Set separately so the address a customer sees is not the one internal alerts come from |
 | `SITE_ORIGIN` | Public origin used to build unsubscribe links. Change at the `.com` cutover, alongside `VITE_SITE_ORIGIN` |
 
@@ -228,19 +239,14 @@ Never give any of these a `VITE_` prefix — Vite inlines every `VITE_*` variabl
 into the public client bundle, including from gitignored env files. And note
 `.env.production` **is tracked in git**, so it takes public values only.
 
-### ⚠️ Email is not yet reaching anyone
+### Sending domain
 
-No Resend sending domain is verified, so sends currently fail with
-`403 … domain is not verified`, recorded in `notifyError` / `confirmError` as
-`waiting on sending domain`. That is the system working as designed — the
-submission is stored, no attempt budget is spent, and the hourly sweep keeps it
-queued indefinitely.
-
-The domain `notifications.afterglowcredit.com` has been created in Resend
-(eu-west-1, matching Convex). What remains is adding its four DNS records **in
-GoDaddy, which hosts the `.com` DNS — not Hostinger, which only hosts
-`.online`** — and pressing Verify. No code change is needed afterwards: the
-hourly sweep drains the backlog.
+`notifications.afterglowcredit.com` is verified in Resend (eu-west-1) as of
+12 September 2026: DKIM, SPF and the return-path records are live in GoDaddy
+DNS. If it ever lapses, sends fail with `403 … domain is not verified`,
+recorded as `waiting on sending domain` without spending the row's attempt
+budget, and the hourly sweep resends everything still inside its seven-day
+window once the records are back.
 
 A subdomain of `.com` is the right choice because the recipients are `@afterglowcredit.com`
 mailboxes and that domain publishes `p=quarantine` with relaxed alignment, so a

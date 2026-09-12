@@ -6,10 +6,9 @@ import type { Id } from "./_generated/dataModel";
 import { contactConfirmation, merchantConfirmation, waitlistConfirmation } from "./mailTemplates";
 
 /**
- * Inbound-enquiry notifications: contact form messages and merchant partnership
- * applications. Both are things a human has to answer, so both get emailed.
- * Waitlist signups deliberately do not — they are bulk, and per-signup mail
- * would be noise.
+ * Team notifications, one per form, each to the inbox that deals with it:
+ * contact enquiries and customer waitlist signups to the general inbox,
+ * merchant partnership applications to the partnerships inbox.
  *
  * Deliberately hand-rolled rather than using @convex-dev/resend. The component's
  * selling point is durable delivery, but its default cover is about 7.5 minutes
@@ -23,9 +22,8 @@ import { contactConfirmation, merchantConfirmation, waitlistConfirmation } from 
  *
  * Two kinds of mail leave this file. The *notifications* above go to the team.
  * The *confirmations* further down go back to whoever submitted, and every form
- * gets one — including the waitlist, which sends the team nothing. They share
- * the send path, the backoff and the sweep, but track their outcome in their
- * own fields: a customer acknowledgement failing tells you something different
+ * gets one. Both kinds share the send path, the backoff and the sweep, but
+ * track their outcome in separate fields: a customer acknowledgement failing tells you something different
  * from the team never being told, so one must not overwrite the other.
  */
 
@@ -131,7 +129,7 @@ export const getRow = internalQuery({
 
 export const recordResult = internalMutation({
   args: {
-    id: v.union(v.id("contactEnquiries"), v.id("merchantApplications")),
+    id: anyRowId,
     notified: v.boolean(),
     error: v.optional(v.string()),
     /** False when nothing was actually tried — see isNotReady. */
@@ -184,10 +182,10 @@ async function settle(opts: {
 }
 
 /** Reads the mail configuration, or explains which part is missing. */
-function mailConfig(recipientVar: "CONTACT_NOTIFY_TO" | "MERCHANT_NOTIFY_TO") {
+function mailConfig(recipientVar: "CONTACT_NOTIFY_TO" | "MERCHANT_NOTIFY_TO" | "WAITLIST_NOTIFY_TO") {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM;
-  // Merchant mail falls back to the general inbox rather than going nowhere.
+  // Merchant and waitlist mail fall back to the general inbox rather than going nowhere.
   const to = process.env[recipientVar] ?? process.env.CONTACT_NOTIFY_TO;
   if (!apiKey || !from || !to) return null;
   return { apiKey, from, to };
@@ -300,6 +298,66 @@ export const merchantApplication = internalAction({
   },
 });
 
+
+/* ---------------------------------------------------------------- waitlist */
+
+export const waitlistSignup = internalAction({
+  args: { id: v.id("waitlistSignups"), attempt: v.number() },
+  returns: v.null(),
+  handler: async (ctx, { id, attempt }) => {
+    const row = await ctx.runQuery(internal.notify.getRow, { id });
+    if (!row || !("unsubscribeToken" in row)) return null;
+    if (row.notifiedAt) return null;
+
+    const config = mailConfig("WAITLIST_NOTIFY_TO");
+    if (!config) {
+      await ctx.runMutation(internal.notify.recordResult, {
+        id,
+        notified: false,
+        error: "email not configured",
+        spendAttempt: false, // nothing was tried
+      });
+      return null;
+    }
+
+    // Inferred rather than passed in: the homepage capture is the only form
+    // that never asks about marketing, so an unanswered choice means it came
+    // from there. If the homepage ever gains a consent checkbox, pass the
+    // source explicitly instead.
+    const fromHomepage = row.marketingConsent === undefined;
+    const marketing = fromHomepage ? "Not asked" : row.marketingConsent ? "Opted in" : "Not opted in";
+    const who = oneLine(row.name || row.email, 120);
+
+    const result = await sendViaResend({
+      ...config,
+      replyTo: row.email, // hitting reply answers the person who signed up
+      subject: `[Waitlist] New signup — ${who}${row.city ? `, ${oneLine(row.city, 60)}` : ""}`,
+      text: [
+        `Name:        ${row.name || "not given"}`,
+        `Email:       ${row.email}`,
+        `City:        ${row.city || "not given"}`,
+        `Treatments:  ${row.treatments.length > 0 ? row.treatments.join(", ") : "none chosen"}`,
+        `Marketing:   ${marketing}`,
+        `Signed up:   ${fromHomepage ? "Homepage (email address only)" : "Waitlist page"}`,
+        "",
+        "--",
+        `Signup ${id} — afterglowcredit.com waitlist`,
+        "They are sent their own confirmation email separately.",
+      ].join("\n"),
+      idempotencyKey: `waitlist-${id}`,
+    });
+
+    await settle({
+      attempt,
+      result,
+      record: (notified, error, spendAttempt) =>
+        ctx.runMutation(internal.notify.recordResult, { id, notified, error, spendAttempt }),
+      reschedule: (ms, next) =>
+        ctx.scheduler.runAfter(ms, internal.notify.waitlistSignup, { id, attempt: next }),
+    });
+    return null;
+  },
+});
 
 /* --------------------------------------------------- confirmations to sender */
 
@@ -552,6 +610,19 @@ export const sweepUnnotified = internalMutation({
           returning: row.confirmReturning ?? false,
           send: row.confirmSends ?? 1,
         });
+      }
+    }
+
+    // Team notifications for new signups. Keyed on creation time, and only for
+    // rows carrying notifyQueuedAt: signups from before these notifications
+    // existed must not be announced to the inbox after the fact.
+    for (const row of await ctx.db
+      .query("waitlistSignups")
+      .withIndex("by_creation_time", (q) => q.gt("_creationTime", since))
+      .collect()) {
+      if (row.notifyQueuedAt === undefined) continue;
+      if (stalled(row._creationTime, row.notifiedAt, row.notifyAttempts)) {
+        await ctx.scheduler.runAfter(0, internal.notify.waitlistSignup, { id: row._id, attempt: 0 });
       }
     }
 

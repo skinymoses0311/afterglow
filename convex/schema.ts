@@ -43,6 +43,17 @@ export default defineSchema({
     /** Which wording the queued confirmation uses; the sweep has to retry the
      *  same one, and it cannot be derived for rows that predate this feature. */
     confirmReturning: v.optional(v.boolean()),
+
+    /**
+     * Team notification that someone new joined — the same trio the enquiry
+     * tables carry. notifyQueuedAt is only set on rows created after these
+     * notifications were introduced, which is what stops the sweep announcing
+     * earlier signups to the inbox long after the fact.
+     */
+    notifyQueuedAt: v.optional(v.number()),
+    notifiedAt: v.optional(v.number()),
+    notifyAttempts: v.optional(v.number()),
+    notifyError: v.optional(v.string()),
   })
     // Enforces one signup per address, and backs the duplicate check.
     .index("by_email", ["email"])

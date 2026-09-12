@@ -89,6 +89,7 @@ export const signUp = mutation({
       confirmSends: 1,
       confirmQueuedAt: Date.now(),
       confirmReturning: false,
+      notifyQueuedAt: Date.now(),
       ...(args.marketingConsent === undefined
         ? {}
         : { marketingConsent: args.marketingConsent, marketingConsentAt: Date.now() }),
@@ -102,6 +103,10 @@ export const signUp = mutation({
       returning: false,
       send: 1,
     });
+    // The team hears about new signups only. Someone re-submitting is updating
+    // an existing row, and announcing them again would put the same person in
+    // the inbox every time they change their city.
+    await ctx.scheduler.runAfter(0, internal.notify.waitlistSignup, { id, attempt: 0 });
 
     return { duplicate: false };
   },
