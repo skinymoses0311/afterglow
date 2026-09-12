@@ -244,7 +244,7 @@ const Categories = () => (
 
 /* ---------------------------------------------------------------- audiences */
 
-const MERCHANT_POINTS = ["Paid in full, next business day", "0% risk. We cover the credit", "No integration, no POS changes"];
+const MERCHANT_POINTS = ["Paid in full, next business day", "0% risk. We cover the credit", "No integration needed"];
 
 const Audiences = () => (
   <Container className="py-20 md:py-[104px]">

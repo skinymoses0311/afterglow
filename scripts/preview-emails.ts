@@ -22,7 +22,7 @@ import {
 } from "../convex/mailTemplates";
 
 const OUT = join(process.cwd(), ".mail-preview");
-const UNSUB = "https://afterglowcredit.online/unsubscribe?token=preview-token";
+const UNSUB = "https://afterglowcredit.com/unsubscribe?token=preview-token";
 
 const CASES: Array<[string, Mail]> = [
   [

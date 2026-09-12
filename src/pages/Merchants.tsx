@@ -58,7 +58,7 @@ const BENEFITS = [
   {
     icon: Zap,
     t: "No integration needed",
-    d: "Customers receive a voucher code from AfterGlow and book their appointment with you as normal — nothing to install, no POS changes.",
+    d: "Customers receive a voucher code from AfterGlow and book their appointment with you as normal — nothing to install.",
   },
   {
     icon: TrendingUp,

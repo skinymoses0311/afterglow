@@ -50,4 +50,4 @@ ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old;
     sudo rm -rf "$old"
 done
 
-echo "==> Done — live at https://afterglowcredit.online"
+echo "==> Done — live at https://afterglowcredit.com"

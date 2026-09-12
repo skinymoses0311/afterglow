@@ -228,7 +228,7 @@ export const contactEnquiry = internalAction({
         row.message,
         "",
         "--",
-        `Enquiry ${id} — afterglowcredit.online contact form`,
+        `Enquiry ${id} — afterglowcredit.com contact form`,
       ].join("\n"),
       idempotencyKey: `contact-${id}`,
     });
@@ -282,7 +282,7 @@ export const merchantApplication = internalAction({
         row.message ?? "(no message)",
         "",
         "--",
-        `Application ${id} — afterglowcredit.online merchant form`,
+        `Application ${id} — afterglowcredit.com merchant form`,
         "The site promises a reply within 48 hours.",
       ].join("\n"),
       idempotencyKey: `merchant-${id}`,
