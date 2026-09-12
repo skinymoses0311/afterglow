@@ -34,7 +34,13 @@ export const Footer = () => (
           Glow now, pay later. The buy now, pay later platform built for beauty and wellness.
         </p>
         <div className="mt-[22px] flex gap-3 text-muted-foreground">
-          <a href="https://instagram.com" aria-label="AfterGlow on Instagram" className="hover:text-foreground">
+          <a
+            href="https://www.instagram.com/afterglowcredit/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="AfterGlow on Instagram"
+            className="hover:text-foreground"
+          >
             <Instagram className="h-[18px] w-[18px]" />
           </a>
           <a href="mailto:hello@afterglowcredit.com" aria-label="Email AfterGlow" className="hover:text-foreground">
