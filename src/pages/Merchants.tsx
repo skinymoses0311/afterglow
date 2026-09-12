@@ -309,15 +309,17 @@ const Merchants = () => {
               </CardContent>
             </Card>
 
-            <FormPrivacyNotice>
-              We will use the business contact information you provide to assess and respond to your enquiry about
-              partnering with AfterGlow, and to communicate with you about our platform and partnership
-              opportunities. We do this on the basis of our legitimate interests in evaluating potential business
-              relationships and taking steps necessary to enter into a contract. We may also send you communications
-              about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
-              contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
-              personal data, including your rights, please see our <PolicyLink />.
-            </FormPrivacyNotice>
+            {!submitted && (
+              <FormPrivacyNotice>
+                We will use the business contact information you provide to assess and respond to your enquiry about
+                partnering with AfterGlow, and to communicate with you about our platform and partnership
+                opportunities. We do this on the basis of our legitimate interests in evaluating potential business
+                relationships and taking steps necessary to enter into a contract. We may also send you communications
+                about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
+                contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
+                personal data, including your rights, please see our <PolicyLink />.
+              </FormPrivacyNotice>
+            )}
           </div>
         </Container>
       </section>

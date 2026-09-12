@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { Check, LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -244,12 +243,7 @@ const Waitlist = () => {
                         I would like to receive marketing emails from AfterGlow about new products, services, offers and
                         launch updates. I understand that I can unsubscribe at any time by clicking the unsubscribe link
                         in any email or by contacting{" "}
-                        <a
-                          href="mailto:louisa@afterglowcredit.com"
-                          className="text-primary underline underline-offset-2 hover:no-underline"
-                        >
-                          louisa@afterglowcredit.com
-                        </a>
+                        <LouisaMail />
                         . This is optional.
                       </span>
                     </label>
@@ -264,28 +258,35 @@ const Waitlist = () => {
                       )}
                     </Button>
 
-                    <p className="text-center text-xs text-muted-foreground">
-                      By joining our waitlist, you agree to our{" "}
-                      <Link to="/privacy" className="text-primary underline underline-offset-2 hover:no-underline">
-                        Privacy and Cookie Policy
-                      </Link>
-                      .
+                    {/* Not "you agree to": the basis is your request plus our
+                        legitimate interests, as the notice itself sets out. */}
+                    <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                      We explain{" "}
+                      <a
+                        href={`#${formPrivacyNoticeId}`}
+                        className="text-link underline underline-offset-2 hover:no-underline"
+                      >
+                        how we use your information
+                      </a>{" "}
+                      on this page, and in full in our <PolicyLink />.
                     </p>
                   </form>
                 )}
               </CardContent>
             </Card>
 
-            <FormPrivacyNotice>
-              We will use the information you provide (your name, email address and any preferences you share) to
-              manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
-              this on the basis that you have asked us to keep you informed about our service, and because we have a
-              legitimate interest in managing and responding to expressions of interest. If you tick the marketing
-              checkbox in the form, we will also send you marketing communications about AfterGlow products and services; you
-              can withdraw your consent to marketing at any time. For full details of how we use your personal data,
-              including your rights, please see our <PolicyLink />. If you have any questions about how your data is
-              used, please contact us at <LouisaMail />.
-            </FormPrivacyNotice>
+            {!submitted && (
+              <FormPrivacyNotice>
+                We will use the information you provide (your name, email address and any preferences you share) to
+                manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
+                this on the basis that you have asked us to keep you informed about our service, and because we have a
+                legitimate interest in managing and responding to expressions of interest. If you tick the marketing
+                checkbox in the form, we will also send you marketing communications about AfterGlow products and services; you
+                can withdraw your consent to marketing at any time. For full details of how we use your personal data,
+                including your rights, please see our <PolicyLink />. If you have any questions about how your data is
+                used, please contact us at <LouisaMail />.
+              </FormPrivacyNotice>
+            )}
           </div>
         </Container>
       </section>
