@@ -30,6 +30,23 @@ const TITLES: Record<string, string> = {
  * Allowlist, not a blocklist. Anything not named here is dropped before the URL
  * reaches Google, so a stray token or email in a query string can never leak.
  */
+/**
+ * Points every page at one canonical URL. Without this the site has no canonical
+ * at all, so a host serving the same content twice — www vs apex, or .online
+ * alongside .com during the move — reads as duplicate content.
+ */
+function setCanonical(path: string): void {
+  const origin = import.meta.env.VITE_SITE_ORIGIN;
+  if (!origin) return;
+  let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "canonical";
+    document.head.appendChild(link);
+  }
+  link.href = origin + path;
+}
+
 const KEEP_PARAMS = new Set([
   "utm_source",
   "utm_medium",
@@ -63,6 +80,8 @@ export const RouteTracker = () => {
 
     const title = TITLES[pathname] ?? "AfterGlow — Page not found";
     document.title = title; // set before the event, so page_title is correct
+    // Canonical uses the path only — query strings are not distinct pages here.
+    setCanonical(pathname);
 
     const referrer = lastPath.current
       ? window.location.origin + lastPath.current

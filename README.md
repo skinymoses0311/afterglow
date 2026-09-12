@@ -434,6 +434,27 @@ sudo mv -Tf /var/www/afterglow/current.new /var/www/afterglow/current
 sudo systemctl reload nginx
 ```
 
+### Moving to afterglowcredit.com
+
+`deploy/cutover-to-com.sh` does the whole server side in one guarded run:
+expands the existing certificate to cover all four hostnames, then installs
+`deploy/nginx-com.conf`, which makes the apex canonical and 301s www and both
+`.online` hostnames to it.
+
+It **refuses to run** until all four names resolve to this server, because
+expanding the certificate against a hostname still pointing at the old site
+burns a Let's Encrypt failure for nothing. It also checks the MX records still
+exist before touching anything.
+
+Two things it deliberately does not do, because they are not server-side:
+change `VITE_SITE_ORIGIN` in `.env.production` to the new origin and redeploy,
+and edit the GA4 data stream URL.
+
+`.online` keeps serving over HTTPS rather than being switched off — it was
+issued HSTS with a one-year max-age, so browsers that have seen it will refuse
+plain HTTP there until 2027, and the redirect needs a valid certificate to be
+reachable at all.
+
 ### Server config
 
 | Thing | Location |
