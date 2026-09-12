@@ -46,7 +46,13 @@ npm run lint     # typecheck only
 | `/contact`     | Contact       | Enquiry form, writes to `contactEnquiries`                |
 | `/privacy`     | Privacy       | Privacy and Cookie Policy (lazy-loaded)                   |
 | `/terms`       | Terms         | Website Terms and Conditions (lazy-loaded)                |
-| `*`            | NotFound      | 404                                                        |
+| `*`            | NotFound      | Pre-rendered to `404.html`, served with a real 404 status  |
+
+Every path above is declared once, in `src/seo/pages.ts`, with its title and
+whether search engines may index it. `App.tsx` maps a component to each —
+TypeScript fails the build if either side is missing one — and the build
+pre-renders exactly that list, so a route that isn't there doesn't exist in
+production. See [Pre-rendering and SEO](#pre-rendering-and-seo).
 
 ## Backend
 
@@ -470,7 +476,13 @@ src/
   lib/
     submissions.ts   ← the only place that talks to a backend
     utils.ts         ← cn() class merger
-  pages/        Index, Waitlist, Merchants, Book, Unsubscribe, NotFound
+  pages/        Index, Waitlist, Merchants, Book, About, Contact, Privacy, Terms,
+                Unsubscribe, NotFound
+  seo/
+    pages.ts         ← every route: title, description, indexable
+  entry-server.tsx   ← renders one route to HTML at build time
+scripts/
+  prerender.mjs      ← writes dist/<route>/index.html, 404.html, sitemap.xml
 ```
 
 Only the seven UI primitives the site actually uses are vendored, rather than the
@@ -478,9 +490,9 @@ full shadcn set.
 
 ## Deployment
 
-Live at **https://afterglowcredit.online** on a Hostinger VPS (Ubuntu 24.04),
-served as static files by nginx with an SPA fallback so client-side routes
-resolve on hard refresh.
+Live at **https://afterglowcredit.com** on a Hostinger VPS (Ubuntu 24.04),
+served as static files by nginx. Every page is a pre-rendered HTML file and
+there is no single-page-app fallback, so any other path is a real 404.
 
 To deploy the current checkout:
 
@@ -488,7 +500,9 @@ To deploy the current checkout:
 ./deploy/deploy.sh
 ```
 
-That builds into `dist/`, copies it to a timestamped directory under
+That builds into `dist/`, installs and tests the nginx config (putting the
+previous one back and stopping if the test fails), copies the build to a
+timestamped directory under
 `/var/www/afterglow/releases/`, then atomically flips the
 `/var/www/afterglow/current` symlink and reloads nginx. The last five releases
 are kept, so rolling back is just repointing the symlink:
@@ -499,7 +513,42 @@ sudo mv -Tf /var/www/afterglow/current.new /var/www/afterglow/current
 sudo systemctl reload nginx
 ```
 
+### Pre-rendering and SEO
+
+`npm run build` is three steps:
+
+1. `vite build` — the browser bundle.
+2. `vite build --ssr src/entry-server.tsx` — the same app, built to run in Node.
+3. `scripts/prerender.mjs` — renders every path in `src/seo/pages.ts` to
+   `dist/<path>/index.html`, plus `dist/404.html` and `dist/sitemap.xml`.
+
+Each page's HTML carries its own title, description, canonical and share tags,
+the homepage's Organization and WebSite structured data, and the full page
+content — so search engines, link-preview scrapers and AI crawlers that don't
+run JavaScript see the real page. In the browser, `main.tsx` hydrates that
+markup rather than replacing it. `vite dev` still renders client-side only.
+
+What that means day to day:
+
+- **Adding a page:** add it to `src/seo/pages.ts` and give it a component in
+  `App.tsx`. Without both the build fails; without the build nginx 404s it.
+- **Keeping a page out of search results:** `indexable: false`. It gets
+  `noindex` and leaves the sitemap. Don't use `robots.txt` for this — a
+  disallowed URL can still be indexed, and its `noindex` can't be read.
+- **Link preview image:** put a 1200×630 JPG or PNG in `public/` and set
+  `SHARE_IMAGE`. Every page picks it up.
+- **Code that runs during render must work in Node.** Anything touching
+  `window`, `document` or cookies belongs in an effect or an event handler. The
+  Convex client is only constructed in the browser for this reason, and no
+  component uses a Convex hook — one that did would need rethinking. A
+  hydration mismatch shows as a console error on page load.
+- **Fonts** are self-hosted variable fonts, preloaded, with size-matched Arial
+  fallbacks in `src/index.css` so text doesn't reflow when they arrive.
+  Re-measure the fallbacks if either font changes.
+
 ### Moving to afterglowcredit.com
+
+Done in September 2026; kept for reference.
 
 `deploy/cutover-to-com.sh` does the whole server side in one guarded run:
 expands the existing certificate to cover all four hostnames, then installs
@@ -530,10 +579,13 @@ reachable at all.
 | Shared headers | `/etc/nginx/snippets/afterglow-headers.conf` |
 | Web root | `/var/www/afterglow/current` → `releases/<timestamp>` |
 | Certificate | `/etc/letsencrypt/live/afterglowcredit.online/` |
+| Brotli | `libnginx-mod-http-brotli-filter` (apt) — the config needs it |
 
-`deploy/nginx.conf` is the pre-TLS starting point; certbot rewrote the installed
-copy to add the 443 listeners and the HTTP→HTTPS redirect. Certificates renew
-automatically via `certbot.timer`.
+`deploy/nginx-com.conf` is the live config, and `deploy.sh` installs it on every
+deploy because it and the build depend on each other. `deploy/nginx.conf` is the
+original pre-TLS starting point, kept for history only: installing it now would
+bring back the soft 404s and drop HTTPS. Certificates renew automatically via
+`certbot.timer`.
 
 Headers are kept in a snippet because nginx's `add_header` does not merge across
 levels — a single `add_header` in a `location` block discards everything

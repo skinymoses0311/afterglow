@@ -22,3 +22,6 @@ npm-debug.log*
 
 # Rendered email previews (npm run mail:preview)
 .mail-preview/
+
+# Build-time server render, consumed by scripts/prerender.mjs
+dist-server

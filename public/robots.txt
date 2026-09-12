@@ -1,14 +1,14 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Everything is open to crawling, AI search crawlers included.
+#
+# Keep this to one group. A crawler obeys only the most specific group that
+# names it, so a separate Googlebot group would silently ignore any rule added
+# under * later.
+#
+# Don't Disallow a page to keep it out of search results: a blocked URL can
+# still be indexed from links, and a crawler can't see a noindex it isn't
+# allowed to fetch. Set indexable: false in src/seo/pages.ts instead.
 
 User-agent: *
 Allow: /
+
+Sitemap: https://afterglowcredit.com/sitemap.xml

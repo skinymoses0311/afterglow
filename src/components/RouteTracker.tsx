@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 import { trackEvent } from "@/lib/analytics";
+import { NOT_FOUND_TITLE, PAGES, SITE_ORIGIN, isPagePath } from "@/seo/pages";
 
 /**
  * Fires page_view on route change.
@@ -14,39 +15,30 @@ import { trackEvent } from "@/lib/analytics";
  * from.
  */
 
-const TITLES: Record<string, string> = {
-  "/": "AfterGlow — Glow Now, Pay Later",
-  "/waitlist": "AfterGlow — Join the waitlist",
-  "/merchants": "AfterGlow — For salons & clinics",
-  "/book": "AfterGlow — Book a treatment",
-  "/unsubscribe": "AfterGlow — Unsubscribe",
-  "/privacy": "AfterGlow — Privacy and Cookie Policy",
-  "/terms": "AfterGlow — Website Terms and Conditions",
-  "/about": "AfterGlow — About us",
-  "/contact": "AfterGlow — Contact us",
-};
-
 /**
- * Allowlist, not a blocklist. Anything not named here is dropped before the URL
- * reaches Google, so a stray token or email in a query string can never leak.
+ * Points each indexable page at its one canonical URL, and removes the tag
+ * everywhere else. Without it, a host serving the same content twice — www vs
+ * apex, say — reads as duplicate content. Pre-rendered pages arrive with the
+ * right tag already; this keeps it right as the visitor navigates.
  */
-/**
- * Points every page at one canonical URL. Without this the site has no canonical
- * at all, so a host serving the same content twice — www vs apex, or .online
- * alongside .com during the move — reads as duplicate content.
- */
-function setCanonical(path: string): void {
-  const origin = import.meta.env.VITE_SITE_ORIGIN;
-  if (!origin) return;
+function setCanonical(path: string | null): void {
   let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (path === null) {
+    link?.remove();
+    return;
+  }
   if (!link) {
     link = document.createElement("link");
     link.rel = "canonical";
     document.head.appendChild(link);
   }
-  link.href = origin + path;
+  link.href = SITE_ORIGIN + path;
 }
 
+/**
+ * Allowlist, not a blocklist. Anything not named here is dropped before the URL
+ * reaches Google, so a stray token or email in a query string can never leak.
+ */
 const KEEP_PARAMS = new Set([
   "utm_source",
   "utm_medium",
@@ -78,10 +70,11 @@ export const RouteTracker = () => {
     // does not actually change the location.
     if (lastSent.current === path) return;
 
-    const title = TITLES[pathname] ?? "AfterGlow — Page not found";
+    const page = isPagePath(pathname) ? PAGES[pathname] : null;
+    const title = page?.title ?? NOT_FOUND_TITLE;
     document.title = title; // set before the event, so page_title is correct
     // Canonical uses the path only — query strings are not distinct pages here.
-    setCanonical(pathname);
+    setCanonical(page?.indexable ? pathname : null);
 
     const referrer = lastPath.current
       ? window.location.origin + lastPath.current
@@ -93,7 +86,7 @@ export const RouteTracker = () => {
       ...(referrer ? { page_referrer: referrer } : {}),
     });
 
-    if (!(pathname in TITLES)) {
+    if (!page) {
       trackEvent("page_not_found", { af_page_path: path });
     }
 

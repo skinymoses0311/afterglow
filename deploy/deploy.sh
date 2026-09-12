@@ -35,12 +35,29 @@ sudo mkdir -p "$target"
 sudo cp -r dist/. "$target/"
 sudo chown -R www-data:www-data "$target"
 
+echo "==> Installing nginx config"
+# Shipped with every deploy because the config and the build depend on each
+# other: nginx serves the pre-rendered pages as files and 404s anything else.
+# Nothing takes effect until the reload below, and a config that fails its test
+# is put back before the release goes live.
+NGINX_SITE=/etc/nginx/sites-available/afterglow
+NGINX_HEADERS=/etc/nginx/snippets/afterglow-headers.conf
+sudo cp "$NGINX_SITE" "$NGINX_SITE.previous"
+sudo cp "$NGINX_HEADERS" "$NGINX_HEADERS.previous"
+sudo cp deploy/nginx-com.conf "$NGINX_SITE"
+sudo cp deploy/security-headers.conf "$NGINX_HEADERS"
+if ! sudo nginx -t; then
+    sudo cp "$NGINX_SITE.previous" "$NGINX_SITE"
+    sudo cp "$NGINX_HEADERS.previous" "$NGINX_HEADERS"
+    echo "nginx config failed its test; restored the previous one. Nothing was published." >&2
+    exit 1
+fi
+
 # Atomic swap: write the new symlink beside the old one, then rename over it.
 sudo ln -sfn "$target" "$WEB_ROOT/current.new"
 sudo mv -Tf "$WEB_ROOT/current.new" "$WEB_ROOT/current"
 
 echo "==> Reloading nginx"
-sudo nginx -t
 sudo systemctl reload nginx
 
 echo "==> Pruning old releases (keeping $KEEP)"

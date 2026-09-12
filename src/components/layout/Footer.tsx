@@ -70,7 +70,10 @@ export const Footer = () => (
     </Container>
 
     <div className="border-t border-border/60 py-5 text-center text-xs text-muted-foreground">
-      <p>
+      {/* The year is fixed when the page is pre-rendered. Across New Year the
+          browser's differs until the next deploy, which is harmless — so tell
+          React to keep the pre-rendered text rather than treat it as an error. */}
+      <p suppressHydrationWarning>
         © {new Date().getFullYear()} AfterGlow. All rights reserved. AfterGlow is not a lender; credit is
         subject to status.
       </p>

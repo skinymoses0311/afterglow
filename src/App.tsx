@@ -1,12 +1,11 @@
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { ConvexProvider } from "convex/react";
+import { Suspense, lazy, type ReactElement } from "react";
+import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { RouteScroll } from "@/components/RouteScroll";
 import { RouteTracker } from "@/components/RouteTracker";
-import { convex } from "@/lib/convex";
+import type { PagePath } from "@/seo/pages";
 import Index from "@/pages/Index";
 import Waitlist from "@/pages/Waitlist";
 import Merchants from "@/pages/Merchants";
@@ -22,31 +21,44 @@ import NotFound from "@/pages/NotFound";
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 
+/**
+ * The component for each path in seo/pages. Typed against that list, so adding
+ * a page there without a component here, or the reverse, fails the build.
+ */
+const ELEMENTS: Record<PagePath, ReactElement> = {
+  "/": <Index />,
+  "/waitlist": <Waitlist />,
+  "/merchants": <Merchants />,
+  "/book": <Book />,
+  "/about": <About />,
+  "/contact": <Contact />,
+  "/privacy": <Privacy />,
+  "/terms": <Terms />,
+  "/unsubscribe": <Unsubscribe />,
+};
+
+/**
+ * Everything inside the router. The browser mounts this in a BrowserRouter
+ * (main.tsx); the build renders it in a StaticRouter (entry-server.tsx) to
+ * pre-render each page.
+ */
 const App = () => (
-  <ConvexProvider client={convex}>
-    <BrowserRouter>
-      <Toaster position="top-center" richColors />
-      {/* Inside the router so they can read the location; outside Routes so
-          they survive every navigation. */}
-      <RouteScroll />
-      <RouteTracker />
-      <Suspense fallback={<div className="min-h-screen bg-background" />}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/merchants" element={<Merchants />} />
-          <Route path="/book" element={<Book />} />
-          <Route path="/unsubscribe" element={<Unsubscribe />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-      <ConsentBanner />
-    </BrowserRouter>
-  </ConvexProvider>
+  <>
+    <Toaster position="top-center" richColors />
+    {/* Inside the router so they can read the location; outside Routes so
+        they survive every navigation. */}
+    <RouteScroll />
+    <RouteTracker />
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Routes>
+        {(Object.keys(ELEMENTS) as PagePath[]).map((path) => (
+          <Route key={path} path={path} element={ELEMENTS[path]} />
+        ))}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+    <ConsentBanner />
+  </>
 );
 
 export default App;
