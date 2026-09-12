@@ -4,6 +4,7 @@ import { ConvexProvider } from "convex/react";
 import { Toaster } from "sonner";
 
 import { ConsentBanner } from "@/components/ConsentBanner";
+import { RouteScroll } from "@/components/RouteScroll";
 import { RouteTracker } from "@/components/RouteTracker";
 import { convex } from "@/lib/convex";
 import Index from "@/pages/Index";
@@ -25,8 +26,9 @@ const App = () => (
   <ConvexProvider client={convex}>
     <BrowserRouter>
       <Toaster position="top-center" richColors />
-      {/* Inside the router so it can read the location; outside Routes so it
-          survives every navigation. */}
+      {/* Inside the router so they can read the location; outside Routes so
+          they survive every navigation. */}
+      <RouteScroll />
       <RouteTracker />
       <Suspense fallback={<div className="min-h-screen bg-background" />}>
         <Routes>

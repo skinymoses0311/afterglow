@@ -20,10 +20,33 @@ export default defineSchema({
     marketingConsent: v.optional(v.boolean()),
     /** When that choice was made. PECR reg 22 wants evidence, not just a flag. */
     marketingConsentAt: v.optional(v.number()),
+
+    /**
+     * Confirmation-email state. Separate from the notify* fields the enquiry
+     * tables carry: that trio records whether a human was told, this one
+     * records whether the person who submitted got their acknowledgement.
+     * Both can fail independently.
+     */
+    confirmedAt: v.optional(v.number()),
+    confirmAttempts: v.optional(v.number()),
+    confirmError: v.optional(v.string()),
+    /**
+     * Distinct confirmations queued for this row, not HTTP attempts. Unlike the
+     * enquiry tables, a waitlist row is reused when someone re-submits, so
+     * there is no per-submission id to key Resend's idempotency on — this
+     * counter supplies one, which is what lets a genuine second submission send
+     * again while a retry of the same one still dedupes.
+     */
+    confirmSends: v.optional(v.number()),
+    /** When the most recent confirmation was queued. Drives the sweep. */
+    confirmQueuedAt: v.optional(v.number()),
   })
     // Enforces one signup per address, and backs the duplicate check.
     .index("by_email", ["email"])
-    .index("by_unsubscribe_token", ["unsubscribeToken"]),
+    .index("by_unsubscribe_token", ["unsubscribeToken"])
+    // The sweep needs "queued recently and still unconfirmed". _creationTime
+    // cannot answer that: a returning signup reuses a row that may be months old.
+    .index("by_confirm_queued", ["confirmQueuedAt"]),
 
   contactEnquiries: defineTable({
     name: v.string(),
@@ -40,6 +63,11 @@ export default defineSchema({
     notifiedAt: v.optional(v.number()),
     notifyAttempts: v.optional(v.number()),
     notifyError: v.optional(v.string()),
+    /** Acknowledgement sent back to the person who submitted. See the note on
+     *  waitlistSignups: this is independent of whether the team was notified. */
+    confirmedAt: v.optional(v.number()),
+    confirmAttempts: v.optional(v.number()),
+    confirmError: v.optional(v.string()),
   }).index("by_email", ["email"]),
 
   merchantApplications: defineTable({
@@ -54,5 +82,10 @@ export default defineSchema({
     notifiedAt: v.optional(v.number()),
     notifyAttempts: v.optional(v.number()),
     notifyError: v.optional(v.string()),
+    /** Acknowledgement sent back to the person who submitted. See the note on
+     *  waitlistSignups: this is independent of whether the team was notified. */
+    confirmedAt: v.optional(v.number()),
+    confirmAttempts: v.optional(v.number()),
+    confirmError: v.optional(v.string()),
   }).index("by_email", ["email"]),
 });
