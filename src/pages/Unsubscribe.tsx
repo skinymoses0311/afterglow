@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
 
 import { Layout } from "@/components/layout/Layout";
+import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { confirmUnsubscribe, lookupUnsubscribeToken } from "@/lib/submissions";
@@ -53,7 +54,7 @@ const Unsubscribe = () => {
   return (
     <Layout>
       <section className="bg-glow">
-        <div className="container py-24 md:py-32">
+        <Container className="py-24 md:py-32">
           <Card className="mx-auto max-w-lg rounded-3xl border-border/60 shadow-soft">
             <CardContent className="p-10 text-center">
               {state.status === "loading" && (
@@ -114,7 +115,7 @@ const Unsubscribe = () => {
               )}
             </CardContent>
           </Card>
-        </div>
+        </Container>
       </section>
     </Layout>
   );

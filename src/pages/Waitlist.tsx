@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
+import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -103,181 +104,183 @@ const Waitlist = () => {
   return (
     <Layout>
       <section className="relative overflow-hidden bg-glow">
-        <div className="container grid gap-12 py-20 md:grid-cols-2 md:py-28">
-          <div className="flex flex-col justify-center">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground/70 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" /> Early access
-            </span>
+        <Container className="py-20 md:py-28">
+          {/* Top-aligned: the form column is much taller, and centring the copy
+              against it pushes the heading off the first screen. */}
+          <div className="grid items-start gap-12 md:grid-cols-2">
+            <div className="flex flex-col">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground/70 backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" /> Early access
+              </span>
 
-            <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] md:text-6xl">
-              Be first to <em className="not-italic text-primary">glow</em>.
-            </h1>
+              <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] md:text-6xl">
+                Be first to <em className="not-italic text-primary">glow</em>.
+              </h1>
 
-            <p className="mt-6 max-w-lg text-lg text-muted-foreground">
-              We will match you with trusted partners and get you glowing — split into three easy payments with nothing
-              to pay upfront.
-            </p>
+              <p className="mt-6 max-w-lg text-lg text-muted-foreground">
+                We will match you with trusted partners and get you glowing — split into three easy payments with nothing
+                to pay upfront.
+              </p>
 
-            <ul className="mt-8 space-y-3 text-sm">
-              {PERKS.map((perk) => (
-                <li key={perk} className="flex items-center gap-3">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground">
-                    <Check className="h-3.5 w-3.5" />
-                  </span>
-                  {perk}
-                </li>
-              ))}
-            </ul>
-          </div>
+              <ul className="mt-8 space-y-3 text-sm">
+                {PERKS.map((perk) => (
+                  <li key={perk} className="flex items-center gap-3">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-3.5 w-3.5" />
+                    </span>
+                    {perk}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div>
             <Card className="rounded-3xl border-border/60 shadow-soft">
-            <CardContent className="p-8 md:p-10">
-              {submitted ? (
-                <div className="flex h-full flex-col items-center justify-center py-10 text-center">
-                  <div className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground">
-                    <Check className="h-8 w-8" />
+              <CardContent className="p-8 md:p-10">
+                {submitted ? (
+                  <div className="flex h-full flex-col items-center justify-center py-10 text-center">
+                    <div className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="h-8 w-8" />
+                    </div>
+                    <h2 className="mt-6 font-display text-3xl">You are in ✨</h2>
+                    <p className="mt-2 text-muted-foreground">
+                      We will email you the moment AfterGlow launches in {form.city || "your city"} — with first access to{" "}
+                      {form.treatments.slice(0, 2).join(" and ") || "your favourite treatments"}.
+                    </p>
                   </div>
-                  <h2 className="mt-6 font-display text-3xl">You are in ✨</h2>
-                  <p className="mt-2 text-muted-foreground">
-                    We will email you the moment AfterGlow launches in {form.city || "your city"} — with first access to{" "}
-                    {form.treatments.slice(0, 2).join(" and ") || "your favourite treatments"}.
-                  </p>
-                </div>
-              ) : (
-                <form id="waitlist" name="waitlist" onSubmit={handleSubmit} className="space-y-5">
-                  <h2 className="font-display text-3xl">Join the waitlist</h2>
+                ) : (
+                  <form id="waitlist" name="waitlist" onSubmit={handleSubmit} className="space-y-5">
+                    <h2 className="font-display text-3xl">Join the waitlist</h2>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full name</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ava Rose"
-                      maxLength={100}
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full name</Label>
+                      <Input
+                        id="name"
+                        placeholder="Ava Rose"
+                        maxLength={100}
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">
-                      Email <span className="text-primary">*</span>
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="ava@example.com"
-                      required
-                      maxLength={255}
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">
+                        Email <span className="text-primary">*</span>
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="ava@example.com"
+                        required
+                        maxLength={255}
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      placeholder="London"
-                      maxLength={100}
-                      value={form.city}
-                      onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        placeholder="London"
+                        maxLength={100}
+                        value={form.city}
+                        onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-3">
-                    <Label>
-                      Preferred treatments <span className="text-primary">*</span>
-                    </Label>
-                    <p className="text-xs text-muted-foreground">Pick everything you would love to book.</p>
+                    <div className="space-y-3">
+                      <Label>
+                        Preferred treatments <span className="text-primary">*</span>
+                      </Label>
+                      <p className="text-xs text-muted-foreground">Pick everything you would love to book.</p>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      {TREATMENTS.map((treatment) => {
-                        const selected = form.treatments.includes(treatment);
-                        return (
-                          <button
-                            key={treatment}
-                            type="button"
-                            aria-pressed={selected}
-                            onClick={() => toggleTreatment(treatment)}
-                            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-left text-sm transition-colors ${
-                              selected
-                                ? "border-primary bg-primary/10 text-foreground"
-                                : "border-border bg-background hover:bg-secondary"
-                            }`}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors ${
-                                selected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                      <div className="grid grid-cols-2 gap-2">
+                        {TREATMENTS.map((treatment) => {
+                          const selected = form.treatments.includes(treatment);
+                          return (
+                            <button
+                              key={treatment}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => toggleTreatment(treatment)}
+                              className={`flex items-center gap-2 rounded-full border px-3 py-2 text-left text-sm transition-colors ${
+                                selected
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : "border-border bg-background hover:bg-secondary"
                               }`}
                             >
-                              {selected ? <Check className="h-3 w-3" /> : null}
-                            </span>
-                            <span className="truncate">{treatment}</span>
-                          </button>
-                        );
-                      })}
+                              <span
+                                aria-hidden="true"
+                                className={`grid h-4 w-4 shrink-0 place-items-center rounded border transition-colors ${
+                                  selected ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                                }`}
+                              >
+                                {selected ? <Check className="h-3 w-3" /> : null}
+                              </span>
+                              <span className="truncate">{treatment}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Unticked by default and never bundled into the submit
-                      button — marketing consent has to be a separate, positive act. */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-secondary/60 p-4 text-[13px] leading-relaxed text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={marketingConsent}
-                      onChange={(e) => setMarketingConsent(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
-                    />
-                    <span>
-                      I would like to receive marketing emails from AfterGlow about new products, services, offers and
-                      launch updates. I understand that I can unsubscribe at any time by clicking the unsubscribe link
-                      in any email or by contacting{" "}
-                      <a
-                        href="mailto:louisa@afterglowcredit.com"
-                        className="text-primary underline underline-offset-2 hover:no-underline"
-                      >
-                        louisa@afterglowcredit.com
-                      </a>
-                      . This is optional.
-                    </span>
-                  </label>
+                    {/* Unticked by default and never bundled into the submit
+                        button — marketing consent has to be a separate, positive act. */}
+                    <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-secondary/60 p-4 text-[13px] leading-relaxed text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={marketingConsent}
+                        onChange={(e) => setMarketingConsent(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+                      />
+                      <span>
+                        I would like to receive marketing emails from AfterGlow about new products, services, offers and
+                        launch updates. I understand that I can unsubscribe at any time by clicking the unsubscribe link
+                        in any email or by contacting{" "}
+                        <a
+                          href="mailto:louisa@afterglowcredit.com"
+                          className="text-primary underline underline-offset-2 hover:no-underline"
+                        >
+                          louisa@afterglowcredit.com
+                        </a>
+                        . This is optional.
+                      </span>
+                    </label>
 
-                  <Button type="submit" size="lg" disabled={pending} className="w-full rounded-full">
-                    {pending ? (
-                      <>
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Counting you in…
-                      </>
-                    ) : (
-                      "Count me in ✨"
-                    )}
-                  </Button>
+                    <Button type="submit" size="lg" disabled={pending} className="w-full rounded-full">
+                      {pending ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Counting you in…
+                        </>
+                      ) : (
+                        "Count me in ✨"
+                      )}
+                    </Button>
 
-                  <p className="text-center text-xs text-muted-foreground">
-                    By joining our waitlist, you agree to our{" "}
-                    <Link to="/privacy" className="text-primary underline underline-offset-2 hover:no-underline">
-                      Privacy and Cookie Policy
-                    </Link>
-                    .
-                  </p>
-                </form>
-              )}
+                    <p className="text-center text-xs text-muted-foreground">
+                      By joining our waitlist, you agree to our{" "}
+                      <Link to="/privacy" className="text-primary underline underline-offset-2 hover:no-underline">
+                        Privacy and Cookie Policy
+                      </Link>
+                      .
+                    </p>
+                  </form>
+                )}
               </CardContent>
             </Card>
-
-            <FormPrivacyNotice>
-              We will use the information you provide (your name, email address and any preferences you share) to
-              manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
-              this on the basis that you have asked us to keep you informed about our service, and because we have a
-              legitimate interest in managing and responding to expressions of interest. If you tick the marketing
-              checkbox below, we will also send you marketing communications about AfterGlow products and services; you
-              can withdraw your consent to marketing at any time. For full details of how we use your personal data,
-              including your rights, please see our <PolicyLink />. If you have any questions about how your data is
-              used, please contact us at <LouisaMail />.
-            </FormPrivacyNotice>
           </div>
-        </div>
+
+          <FormPrivacyNotice>
+            We will use the information you provide (your name, email address and any preferences you share) to
+            manage your waitlist registration and to contact you about the launch of the AfterGlow service. We do
+            this on the basis that you have asked us to keep you informed about our service, and because we have a
+            legitimate interest in managing and responding to expressions of interest. If you tick the marketing
+            checkbox in the form, we will also send you marketing communications about AfterGlow products and services; you
+            can withdraw your consent to marketing at any time. For full details of how we use your personal data,
+            including your rights, please see our <PolicyLink />. If you have any questions about how your data is
+            used, please contact us at <LouisaMail />.
+          </FormPrivacyNotice>
+        </Container>
       </section>
     </Layout>
   );

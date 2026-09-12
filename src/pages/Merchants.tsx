@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
+import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -143,8 +144,10 @@ const Merchants = () => {
   return (
     <Layout>
       <section className="bg-glow">
-        <div className="container pt-16 pb-12 md:pt-20 md:pb-16">
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
+        <Container className="pt-16 pb-12 md:pt-20 md:pb-16">
+          {/* Top-aligned: the application form is much taller than the copy,
+              and centring against it pushes the heading down the screen. */}
+          <div className="grid items-start gap-12 md:grid-cols-2">
             <div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-foreground/70">
                 For merchants
@@ -172,8 +175,7 @@ const Merchants = () => {
               </div>
             </div>
 
-            <div>
-              <Card id="partner-form" className="scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
+            <Card id="partner-form" className="scroll-mt-24 rounded-3xl border-border/60 shadow-soft">
               <CardContent className="p-8 md:p-10">
                 {submitted ? (
                   <div className="py-10 text-center">
@@ -289,48 +291,49 @@ const Merchants = () => {
                       of how we handle personal data, see our <PolicyLink />.
                     </p>
                   </form>
-                  )}
-                </CardContent>
-              </Card>
-
-              <FormPrivacyNotice>
-                We will use the business contact information you provide to assess and respond to your enquiry about
-                partnering with AfterGlow, and to communicate with you about our platform and partnership
-                opportunities. We do this on the basis of our legitimate interests in evaluating potential business
-                relationships and taking steps necessary to enter into a contract. We may also send you communications
-                about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
-                contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
-                personal data, including your rights, please see our <PolicyLink />.
-              </FormPrivacyNotice>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="container pt-10 pb-16 md:pt-12 md:pb-20">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">Why merchants choose AfterGlow</p>
-          <h2 className="mt-3 font-display text-4xl md:text-5xl">Everything you need to grow.</h2>
-          <p className="mt-4 text-muted-foreground">
-            Flexible payments turn browsers into bookers — and bookers into regulars.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {BENEFITS.map((benefit) => (
-            <Card key={benefit.t} className="rounded-3xl border-border/60 shadow-card-soft">
-              <CardContent className="p-8">
-                <benefit.icon className="h-7 w-7 text-primary" />
-                <h3 className="mt-4 font-display text-2xl">{benefit.t}</h3>
-                <p className="mt-3 text-sm text-muted-foreground">{benefit.d}</p>
+                )}
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </div>
+
+          <FormPrivacyNotice>
+            We will use the business contact information you provide to assess and respond to your enquiry about
+            partnering with AfterGlow, and to communicate with you about our platform and partnership
+            opportunities. We do this on the basis of our legitimate interests in evaluating potential business
+            relationships and taking steps necessary to enter into a contract. We may also send you communications
+            about AfterGlow services that may be relevant to your business; you can opt out of these at any time by
+            contacting <LouisaMail /> or using the unsubscribe link in any email. For full details of how we handle
+            personal data, including your rights, please see our <PolicyLink />.
+          </FormPrivacyNotice>
+        </Container>
+      </section>
+
+      <section className="pt-10 pb-16 md:pt-12 md:pb-20">
+        <Container>
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">Why merchants choose AfterGlow</p>
+            <h2 className="mt-3 font-display text-4xl md:text-5xl">Everything you need to grow.</h2>
+            <p className="mt-4 text-muted-foreground">
+              Flexible payments turn browsers into bookers — and bookers into regulars.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {BENEFITS.map((benefit) => (
+              <Card key={benefit.t} className="rounded-3xl border-border/60 shadow-card-soft">
+                <CardContent className="p-8">
+                  <benefit.icon className="h-7 w-7 text-primary" />
+                  <h3 className="mt-4 font-display text-2xl">{benefit.t}</h3>
+                  <p className="mt-3 text-sm text-muted-foreground">{benefit.d}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Container>
       </section>
 
       <section className="bg-blush py-20 md:py-28">
-        <div className="container">
+        <Container>
           <Card className="rounded-3xl border-0 bg-foreground text-background shadow-soft">
             <CardContent className="grid gap-10 p-10 md:grid-cols-[1.4fr_1fr] md:items-center md:p-16">
               <div>
@@ -371,7 +374,7 @@ const Merchants = () => {
               </ul>
             </CardContent>
           </Card>
-        </div>
+        </Container>
       </section>
     </Layout>
   );

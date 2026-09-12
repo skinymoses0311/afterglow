@@ -79,8 +79,8 @@ const Contact = () => {
   return (
     <Layout>
       <section className="relative overflow-hidden bg-glow">
-        <Container className="grid gap-14 py-20 md:py-24 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
-          <div className="flex flex-col justify-center">
+        <Container className="grid items-start gap-14 py-20 md:py-24 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+          <div className="flex flex-col">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">Contact us</p>
             <h1 className="mt-4 font-display text-[clamp(2.5rem,6vw,3.75rem)] leading-[1.05]">
               We would love to hear from you.
