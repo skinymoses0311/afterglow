@@ -159,3 +159,13 @@
     padding-right: env(safe-area-inset-right);
   }
 }
+
+/*
+ * The consent banner is in the pre-rendered HTML. For a visitor who has already
+ * made a choice, the inline script in index.html sets data-consent-chosen
+ * before first paint, and this keeps the banner hidden until ConsentBanner
+ * mounts and removes it — so it never flashes up for them.
+ */
+html[data-consent-chosen] [data-consent-phase="prerendered"] {
+  display: none;
+}

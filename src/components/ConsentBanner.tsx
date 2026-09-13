@@ -23,13 +23,26 @@ import { clearAnalyticsCookies, getConsent, setConsent } from "@/lib/consent";
 /** Lets the footer link reopen the banner after a choice has been made. */
 export const REOPEN_CONSENT_EVENT = "afterglow:reopen-consent";
 
+/**
+ * "prerendered" is the state every page is built in, with the banner already
+ * in the HTML. That matters on a phone: the banner is the largest thing on a
+ * first visitor's screen, so if it waited for JavaScript it set the page's
+ * Largest Contentful Paint — about a second after everything else had painted.
+ *
+ * A visitor who has already chosen must never see it flash, so the inline
+ * script in index.html marks <html> before first paint and index.css hides the
+ * banner while it is still in this state. Once mounted, the component reads the
+ * cookie itself and moves to "open" or "closed".
+ */
+type Phase = "prerendered" | "open" | "closed";
+
 export const ConsentBanner = () => {
-  const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState<Phase>("prerendered");
 
   useEffect(() => {
-    if (getConsent() === null) setVisible(true);
+    setPhase(getConsent() === null ? "open" : "closed");
 
-    const reopen = () => setVisible(true);
+    const reopen = () => setPhase("open");
     window.addEventListener(REOPEN_CONSENT_EVENT, reopen);
     return () => window.removeEventListener(REOPEN_CONSENT_EVENT, reopen);
   }, []);
@@ -37,24 +50,28 @@ export const ConsentBanner = () => {
   const accept = useCallback(() => {
     setConsent("granted");
     loadAnalytics();
-    setVisible(false);
+    setPhase("closed");
   }, []);
 
   const reject = useCallback(() => {
     setConsent("denied");
     // If they had previously accepted, withdrawal has to remove what was set.
     clearAnalyticsCookies();
-    setVisible(false);
+    setPhase("closed");
   }, []);
 
-  if (!visible) return null;
+  if (phase === "closed") return null;
 
+  // data-nosnippet: now that the banner is in every page's HTML, keep its text
+  // out of the snippets search engines show for the page.
   return (
     <div
       role="dialog"
       aria-modal="false"
       aria-labelledby="consent-heading"
       aria-describedby="consent-body"
+      data-consent-phase={phase}
+      data-nosnippet=""
       className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-md safe-bottom safe-x"
     >
       <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-5 px-6 py-6 md:flex-row md:items-center md:gap-8 md:px-12">

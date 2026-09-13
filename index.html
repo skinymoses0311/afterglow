@@ -16,6 +16,16 @@
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
+    <!-- Before first paint. The consent banner is pre-rendered into every page;
+         if this visitor has already chosen, flag it so index.css keeps the
+         banner hidden until React takes over. Cookie names must match
+         src/lib/consent.ts. -->
+    <script>
+      if (/(?:^|;\s*)(?:afterglow_cookie_consent|ag_consent)=(?:granted|denied)(?:;|$)/.test(document.cookie)) {
+        document.documentElement.setAttribute("data-consent-chosen", "");
+      }
+    </script>
+
     <!-- Each page's description, canonical, social tags, font preloads and
          structured data are written in here by scripts/prerender.mjs. -->
     <!--app-head-->

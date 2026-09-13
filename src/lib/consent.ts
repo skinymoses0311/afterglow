@@ -7,6 +7,8 @@
 
 // Name and duration are stated in the published Privacy and Cookie Policy, so
 // they are fixed by that document rather than chosen here.
+// The inline script in index.html reads both names too, before first paint —
+// keep it in step with any change here.
 const COOKIE = "afterglow_cookie_consent";
 /** Legacy name, still read so an existing choice is not lost on this change. */
 const LEGACY_COOKIE = "ag_consent";
