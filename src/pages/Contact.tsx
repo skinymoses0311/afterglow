@@ -1,8 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Check, LoaderCircle, Mail, Store } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
@@ -11,7 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitContactEnquiry } from "@/lib/submissions";
+import { checkContact } from "@/lib/formChecks";
+import { useTypedBeforeHydration } from "@/lib/typedBeforeHydration";
+import { getSubmissions, warmSubmissions } from "@/lib/loadSubmissions";
 import { trackEvent } from "@/lib/analytics";
 
 const ENQUIRY_TYPES = [
@@ -22,18 +23,20 @@ const ENQUIRY_TYPES = [
   "Something else",
 ];
 
-const contactSchema = z.object({
-  name: z.string().trim().min(1, { message: "Please tell us your name" }).max(100),
-  email: z.string().trim().email({ message: "Please enter a valid email" }).max(255),
-  enquiryType: z.string().trim().min(1),
-  message: z.string().trim().min(1, { message: "Please add a message" }).max(2000),
-});
 
 const PrivacyLink = () => (
   <Link to="/privacy" className="text-primary underline underline-offset-2 hover:no-underline">
     Privacy and Cookie Policy
   </Link>
 );
+
+/** Field id -> form state key, for anything entered before the page was live. */
+const CONTACT_FIELDS = {
+  "contact-name": "name",
+  "contact-email": "email",
+  "contact-type": "enquiryType",
+  "contact-message": "message",
+} as const;
 
 const Contact = () => {
   const [form, setForm] = useState({
@@ -45,21 +48,28 @@ const Contact = () => {
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const formRef = useRef<HTMLFormElement>(null);
+  useTypedBeforeHydration(formRef, (field) => {
+    if (field.id in CONTACT_FIELDS) {
+      setForm((prev) => ({ ...prev, [CONTACT_FIELDS[field.id as keyof typeof CONTACT_FIELDS]]: field.value }));
+    }
+  });
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (pending) return;
 
     trackEvent("af_form_submit", { af_form_id: "contact" });
 
-    const parsed = contactSchema.safeParse(form);
+    const parsed = checkContact(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.message);
       trackEvent("af_form_error", { af_form_id: "contact", error_type: "validation" });
       return;
     }
 
     setPending(true);
-    const result = await submitContactEnquiry({
+    const result = await (await getSubmissions()).submitContactEnquiry({
       ...parsed.data,
       email: parsed.data.email.toLowerCase(),
     });
@@ -144,7 +154,8 @@ const Contact = () => {
                   </p>
                 </div>
               ) : (
-                <form id="contact" name="contact" onSubmit={handleSubmit} className="space-y-5">
+                <form ref={formRef} id="contact" name="contact" onSubmit={handleSubmit}
+                    onFocus={warmSubmissions} className="space-y-5">
                   <h2 className="font-display text-3xl">Send us a message</h2>
 
                   <div className="space-y-2">

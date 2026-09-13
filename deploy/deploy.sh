@@ -33,6 +33,16 @@ target="$RELEASES/$stamp"
 echo "==> Publishing release $stamp"
 sudo mkdir -p "$target"
 sudo cp -r dist/. "$target/"
+
+# Pages load their code in chunks, and a visitor can still have a page from the
+# previous release open when this one goes live — its chunks must still be
+# there when it asks. So carry recent assets forward. Hashed names never clash,
+# and -p keeps each file's original date, so anything older than a week drops
+# away instead of piling up release after release.
+if [ -d "$WEB_ROOT/current/assets" ]; then
+    sudo find "$WEB_ROOT/current/assets/" -maxdepth 1 -type f -mtime -7 \
+        -exec cp -p --update=none {} "$target/assets/" \;
+fi
 sudo chown -R www-data:www-data "$target"
 
 echo "==> Installing nginx config"

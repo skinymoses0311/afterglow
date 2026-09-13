@@ -5,7 +5,7 @@ import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { confirmUnsubscribe, lookupUnsubscribeToken } from "@/lib/submissions";
+import { loadSubmissions } from "@/lib/loadSubmissions";
 import { getUnsubscribeToken } from "@/lib/unsubscribeToken";
 
 type State =
@@ -27,6 +27,7 @@ const Unsubscribe = () => {
 
     (async () => {
       try {
+        const { lookupUnsubscribeToken } = await loadSubmissions();
         const result = await lookupUnsubscribeToken(token);
         if (!cancelled) setState(result);
       } catch {
@@ -44,6 +45,7 @@ const Unsubscribe = () => {
   const handleConfirm = async () => {
     setState({ status: "submitting" });
     try {
+      const { confirmUnsubscribe } = await loadSubmissions();
       const result = await confirmUnsubscribe(token);
       setState(result.ok ? { status: "done" } : { status: "invalid", message: "Something went wrong. Please try again." });
     } catch {

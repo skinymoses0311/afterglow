@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -17,7 +17,6 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
@@ -30,7 +29,9 @@ import heroTreatment from "@/assets/hero-treatment.webp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { submitWaitlistSignup } from "@/lib/submissions";
+import { checkHomeEmail } from "@/lib/formChecks";
+import { useTypedBeforeHydration } from "@/lib/typedBeforeHydration";
+import { getSubmissions, warmSubmissions } from "@/lib/loadSubmissions";
 import { trackEvent } from "@/lib/analytics";
 
 /* -------------------------------------------------------------- shared bits */
@@ -364,12 +365,16 @@ const Faq = () => {
 
 /* ---------------------------------------------------------------------- cta */
 
-const ctaSchema = z.string().trim().email({ message: "Please enter a valid email" }).max(255);
 
 const Cta = () => {
   const [email, setEmail] = useState("");
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  useTypedBeforeHydration(formRef, (field) => {
+    if (field instanceof HTMLInputElement && field.type === "email") setEmail(field.value);
+  });
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -377,9 +382,9 @@ const Cta = () => {
 
     trackEvent("af_form_submit", { af_form_id: "home_cta" });
 
-    const parsed = ctaSchema.safeParse(email);
+    const parsed = checkHomeEmail(email);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.message);
       trackEvent("af_form_error", { af_form_id: "home_cta", error_type: "validation" });
       return;
     }
@@ -387,7 +392,7 @@ const Cta = () => {
     setPending(true);
     // No treatments here — this is a quick capture. The mutation keeps any
     // preferences the person already picked on /waitlist.
-    const result = await submitWaitlistSignup({ email: parsed.data.toLowerCase(), treatments: [] });
+    const result = await (await getSubmissions()).submitWaitlistSignup({ email: parsed.data.toLowerCase(), treatments: [] });
     setPending(false);
 
     if (!result.ok) {
@@ -438,9 +443,11 @@ const Cta = () => {
               ) : (
                 <>
                   <form
+                    ref={formRef}
                     id="home_cta"
                     name="home_cta"
                     onSubmit={handleSubmit}
+                    onFocus={warmSubmissions}
                     className="flex flex-col gap-3 sm:flex-row"
                   >
                     <Input

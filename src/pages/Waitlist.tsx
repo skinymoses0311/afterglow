@@ -1,7 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Check, LoaderCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
@@ -10,7 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormPrivacyNotice, PolicyLink, LouisaMail, formPrivacyNoticeId } from "@/components/FormPrivacyNotice";
-import { submitWaitlistSignup } from "@/lib/submissions";
+import { checkWaitlist } from "@/lib/formChecks";
+import { useTypedBeforeHydration } from "@/lib/typedBeforeHydration";
+import { getSubmissions, warmSubmissions } from "@/lib/loadSubmissions";
 import { trackEvent } from "@/lib/analytics";
 
 const TREATMENTS = [
@@ -30,12 +31,6 @@ const TREATMENTS = [
 
 const PERKS = ["Skip the line when we launch", "£10 welcome credit", "First dibs on exclusive launches near you"];
 
-const waitlistSchema = z.object({
-  name: z.string().trim().max(100).optional(),
-  email: z.string().trim().email({ message: "Please enter a valid email" }).max(255),
-  city: z.string().trim().max(100).optional(),
-  treatments: z.array(z.string()).min(1, { message: "Pick at least one treatment" }),
-});
 
 const Waitlist = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -45,6 +40,14 @@ const Waitlist = () => {
   // marketing needs an explicit opt-in, so it starts unticked and is stored
   // with a timestamp as evidence.
   const [marketingConsent, setMarketingConsent] = useState(false);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  useTypedBeforeHydration(formRef, (field) => {
+    if (field instanceof HTMLInputElement && field.type === "checkbox") setMarketingConsent(field.checked);
+    else if (field.id === "name" || field.id === "email" || field.id === "city") {
+      setForm((prev) => ({ ...prev, [field.id]: field.value }));
+    }
+  });
 
   const toggleTreatment = (treatment: string) => {
     setForm((prev) => ({
@@ -64,16 +67,16 @@ const Waitlist = () => {
     // React form prevents default. Verified against the live tag.
     trackEvent("af_form_submit", { af_form_id: "waitlist" });
 
-    const parsed = waitlistSchema.safeParse(form);
+    const parsed = checkWaitlist(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.message);
       trackEvent("af_form_error", { af_form_id: "waitlist", error_type: "validation" });
       return;
     }
 
     setPending(true);
     const { name, email, city, treatments } = parsed.data;
-    const result = await submitWaitlistSignup({
+    const result = await (await getSubmissions()).submitWaitlistSignup({
       name: name || undefined,
       email: email.toLowerCase(),
       city: city || undefined,
@@ -149,9 +152,11 @@ const Waitlist = () => {
                   </div>
                 ) : (
                   <form
+                    ref={formRef}
                     id="waitlist"
                     name="waitlist"
                     onSubmit={handleSubmit}
+                    onFocus={warmSubmissions}
                     aria-describedby={formPrivacyNoticeId}
                     className="space-y-5"
                   >

@@ -10,12 +10,10 @@ if (!url) {
 }
 
 /**
- * Created in the browser only. The build imports every page to pre-render it,
- * and this module comes along with the forms; constructing the client there
- * would open a live connection to the production deployment from the build.
- *
- * Nothing touches it during a render — submissions happen in event handlers,
- * and no component uses a Convex hook. One that did would need rethinking for
- * pre-rendering anyway.
+ * Only ever reached through lib/loadSubmissions, so it isn't part of any page's
+ * initial JavaScript, and nothing loads it during the build's pre-render. The
+ * browser-only guard stays as a backstop: if a page ever imported this directly,
+ * constructing the client in the build would open a live connection to the
+ * production deployment.
  */
 export const convex = (typeof window === "undefined" ? undefined : new ConvexReactClient(url)) as ConvexReactClient;

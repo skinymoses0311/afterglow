@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
 import founderPhoto from "@/assets/founder-louisa.webp";
+import founderPhotoSmall from "@/assets/founder-louisa-480.webp";
 import { Button } from "@/components/ui/button";
 
 const Eyebrow = ({ children }: { children: string }) => (
@@ -83,6 +84,12 @@ const About = () => (
       <div className="grid items-center gap-12 md:grid-cols-[auto_1fr] md:gap-16">
         <img
           src={founderPhoto}
+          srcSet={`${founderPhotoSmall} 480w, ${founderPhoto} 1036w`}
+          // Cropped to fill a portrait frame, so the pixels it needs follow the
+          // frame's height: 400px tall on desktop (460px of image width), 340px
+          // on phones (392px). Sizes states those widths, so a standard-density
+          // desktop takes the small file and denser screens keep the full one.
+          sizes="(min-width: 768px) 461px, 392px"
           alt="Louisa, founder of AfterGlow."
           width={1036}
           height={900}

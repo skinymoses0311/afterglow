@@ -1,22 +1,26 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Container } from "./Container";
 import { Logo } from "./Logo";
+import { NAV_LINKS } from "./navLinks";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
-  { to: "/", label: "Home" },
-  { to: "/waitlist", label: "Waitlist" },
-  { to: "/book", label: "Book Now" },
-  { to: "/merchants", label: "For Merchants" },
-];
+/**
+ * The phone menu is its own chunk: the dialog machinery behind it is several
+ * kilobytes that only a phone visitor who opens the menu needs. main.tsx fetches
+ * it once the page is idle, and a pointer or focus on the button fetches it
+ * straight away, so opening it doesn't wait on the network.
+ */
+export const loadMobileMenu = () => import("./MobileMenu");
+const MobileMenu = lazy(loadMobileMenu);
 
 export const Header = () => {
   const [open, setOpen] = useState(false);
+  // Stays mounted after the first open, so closing can still animate out.
+  const [menuMounted, setMenuMounted] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/[0.72] backdrop-blur-md safe-top safe-x">
@@ -51,46 +55,27 @@ export const Header = () => {
             <Link to="/book">Book Now</Link>
           </Button>
 
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="flex w-[85%] max-w-sm flex-col safe-top safe-bottom">
-              <SheetHeader>
-                <SheetTitle className="text-left">Menu</SheetTitle>
-              </SheetHeader>
-
-              <nav className="mt-6 flex flex-col gap-1">
-                {NAV_LINKS.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    end={link.to === "/"}
-                    onClick={() => setOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        "rounded-md px-4 py-3 text-base text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground",
-                        isActive && "bg-secondary text-foreground",
-                      )
-                    }
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              <div className="mt-6 flex flex-col gap-2">
-                <Button asChild variant="outline" className="rounded-full" onClick={() => setOpen(false)}>
-                  <Link to="/waitlist">Join Waitlist</Link>
-                </Button>
-                <Button asChild className="rounded-full" onClick={() => setOpen(false)}>
-                  <Link to="/book">Book Now</Link>
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label="Open menu"
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            onPointerDown={loadMobileMenu}
+            onFocus={loadMobileMenu}
+            onClick={() => {
+              setMenuMounted(true);
+              setOpen(true);
+            }}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          {menuMounted && (
+            <Suspense fallback={null}>
+              <MobileMenu open={open} onOpenChange={setOpen} />
+            </Suspense>
+          )}
         </div>
       </Container>
     </header>

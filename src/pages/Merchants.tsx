@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -13,7 +13,6 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Layout } from "@/components/layout/Layout";
 import { Container } from "@/components/layout/Container";
@@ -23,21 +22,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FormPrivacyNotice, PolicyLink, LouisaMail, formPrivacyNoticeId } from "@/components/FormPrivacyNotice";
-import { submitMerchantApplication } from "@/lib/submissions";
+import { checkMerchant } from "@/lib/formChecks";
+import { useTypedBeforeHydration } from "@/lib/typedBeforeHydration";
+import { getSubmissions, warmSubmissions } from "@/lib/loadSubmissions";
 import { trackEvent } from "@/lib/analytics";
 
 /** Bands rather than raw counts — keeps the dimension readable in GA4. */
 const locationsBand = (n: number): string => (n === 1 ? "1" : n <= 5 ? "2-5" : "6+");
 
-const merchantSchema = z.object({
-  businessName: z.string().trim().min(1, { message: "Business name is required" }).max(200),
-  category: z.string().trim().max(100).optional(),
-  contactName: z.string().trim().min(1, { message: "Your name is required" }).max(100),
-  role: z.string().trim().max(100).optional(),
-  email: z.string().trim().email({ message: "Please enter a valid email" }).max(255),
-  locations: z.number().int().min(1).max(10000),
-  message: z.string().trim().max(2000).optional(),
-});
 
 const HERO_STATS = [
   { icon: Users, label: "Repeat bookings" },
@@ -84,6 +76,16 @@ const CTA_POINTS = [
   "Dedicated partnerships team",
 ];
 
+/** Input id -> form state key, for text typed before the page was live. */
+const MERCHANT_FIELDS = {
+  business: "businessName",
+  category: "category",
+  contact: "contactName",
+  role: "role",
+  email: "email",
+  message: "message",
+} as const;
+
 const Merchants = () => {
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
@@ -97,22 +99,30 @@ const Merchants = () => {
     message: "",
   });
 
+  const formRef = useRef<HTMLFormElement>(null);
+  useTypedBeforeHydration(formRef, (field) => {
+    if (field.id === "locations") setForm((prev) => ({ ...prev, locations: Number(field.value) || 1 }));
+    else if (field.id in MERCHANT_FIELDS) {
+      setForm((prev) => ({ ...prev, [MERCHANT_FIELDS[field.id as keyof typeof MERCHANT_FIELDS]]: field.value }));
+    }
+  });
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (pending) return;
 
     trackEvent("af_form_submit", { af_form_id: "merchant" });
 
-    const parsed = merchantSchema.safeParse(form);
+    const parsed = checkMerchant(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast.error(parsed.message);
       trackEvent("af_form_error", { af_form_id: "merchant", error_type: "validation" });
       return;
     }
 
     setPending(true);
     const data = parsed.data;
-    const result = await submitMerchantApplication({
+    const result = await (await getSubmissions()).submitMerchantApplication({
       businessName: data.businessName,
       category: data.category || undefined,
       contactName: data.contactName,
@@ -191,9 +201,11 @@ const Merchants = () => {
                   </div>
                 ) : (
                   <form
+                    ref={formRef}
                     id="merchant"
                     name="merchant"
                     onSubmit={handleSubmit}
+                    onFocus={warmSubmissions}
                     aria-describedby={formPrivacyNoticeId}
                     className="space-y-5"
                   >

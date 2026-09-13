@@ -475,6 +475,8 @@ src/
     ui/         Button, Card, Input, Label, Textarea, Sheet, Tabs
   lib/
     submissions.ts   ← the only place that talks to a backend
+    loadSubmissions.ts ← fetches it on demand
+    formChecks.ts    ← form validation
     utils.ts         ← cn() class merger
   pages/        Index, Waitlist, Merchants, Book, About, Contact, Privacy, Terms,
                 Unsubscribe, NotFound
@@ -521,6 +523,8 @@ sudo systemctl reload nginx
 2. `vite build --ssr src/entry-server.tsx` — the same app, built to run in Node.
 3. `scripts/prerender.mjs` — renders every path in `src/seo/pages.ts` to
    `dist/<path>/index.html`, plus `dist/404.html` and `dist/sitemap.xml`.
+4. `scripts/precompress.mjs` — writes `.br` and `.gz` copies of every text file
+   at maximum compression, which nginx sends as-is.
 
 Each page's HTML carries its own title, description, canonical and share tags,
 the homepage's Organization and WebSite structured data, and the full page
@@ -538,13 +542,48 @@ What that means day to day:
 - **Link preview image:** put a 1200×630 JPG or PNG in `public/` and set
   `SHARE_IMAGE`. Every page picks it up.
 - **Code that runs during render must work in Node.** Anything touching
-  `window`, `document` or cookies belongs in an effect or an event handler. The
-  Convex client is only constructed in the browser for this reason, and no
+  `window`, `document` or cookies belongs in an effect or an event handler. No
   component uses a Convex hook — one that did would need rethinking. A
   hydration mismatch shows as a console error on page load.
+- **Forms can be typed into before the page is live.** React never copies that
+  early typing into state, so without help a visitor is told a field is empty
+  while their text sits in it. Any form with state calls
+  `useTypedBeforeHydration` (`src/lib/typedBeforeHydration.ts`) to pick it up.
 - **Fonts** are self-hosted variable fonts, preloaded, with size-matched Arial
   fallbacks in `src/index.css` so text doesn't reflow when they arrive.
   Re-measure the fallbacks if either font changes.
+
+### Keeping it fast
+
+What a visitor downloads is kept to what the page in front of them needs:
+
+- **Page code stays in the main script.** Splitting it per page was tried and
+  saved only about 13 KB, but it left each pre-rendered page on screen for a
+  noticeable moment before its form was live — and anything typed in that
+  moment showed in the box yet never reached the form's state, so submitting
+  said the field was empty. Only the large, rarely-needed pieces load on demand.
+- **The form backend loads on demand.** `lib/submissions` (and the Convex client
+  inside it) is only fetched through `lib/loadSubmissions` — on first focus in a
+  form, or on the unsubscribe page. If it can't be fetched, the form shows its
+  normal error.
+- **No validation library.** `lib/formChecks.ts` replaced Zod with the same rules
+  and messages, checked input for input against the old schemas.
+- **The phone menu** (the Radix dialog behind it) is its own chunk, fetched
+  once the page is idle.
+- **Images** carry a `srcset` wherever a smaller file is genuinely enough. The
+  homepage hero doesn't: it's cropped to fill its frame, so it needs its pixels.
+
+Caching is set up for a site that changes often:
+
+- `/assets/*` is content-hashed, so it's cached for a year — a change is a new
+  filename.
+- Pages are `no-cache`: always checked with the server, so a deploy shows on the
+  next visit, but an unchanged page comes back as an empty 304.
+- `deploy.sh` carries the previous release's assets from the last seven days
+  into each new release, so a visitor with an old page open can still fetch its
+  chunks after a deploy.
+- Don't add a service worker or cache pages for a fixed time: a stale copy can
+  outlive a deploy.
 
 ### Moving to afterglowcredit.com
 
@@ -579,7 +618,7 @@ reachable at all.
 | Shared headers | `/etc/nginx/snippets/afterglow-headers.conf` |
 | Web root | `/var/www/afterglow/current` → `releases/<timestamp>` |
 | Certificate | `/etc/letsencrypt/live/afterglowcredit.online/` |
-| Brotli | `libnginx-mod-http-brotli-filter` (apt) — the config needs it |
+| Brotli | `libnginx-mod-http-brotli-filter` and `libnginx-mod-http-brotli-static` (apt) — the config needs both |
 
 `deploy/nginx-com.conf` is the live config, and `deploy.sh` installs it on every
 deploy because it and the build depend on each other. `deploy/nginx.conf` is the
